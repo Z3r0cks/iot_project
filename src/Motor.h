@@ -2,21 +2,21 @@
 
 class Motor {
    private:
-    bool braking;
-    int8_t rotating;
-    unsigned long runTime;
-    unsigned long lastTime;
+    bool _braking;
+    int8_t _rotating;
+    unsigned long _runTime;
+    unsigned long _lastTime;
 
-    byte motorA;
-    byte motorB;
-    byte motorV;
+    byte _motorA;
+    byte _motorB;
+    byte _motorV;
 
     void time();
     unsigned long diff();
     void rotateLeft();
     void rotateRight();
     void rotate(unsigned long time, bool right);
-    void rotate(byte a, byte b, byte v);
+    void rotate(byte inputA, byte inputB, byte inputV);
     void stop();
     void brake();
 

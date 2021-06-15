@@ -1,5 +1,4 @@
 #include <Quiz.h>
-#include <Transfer.h>
 
 #define Threshold 150
 
@@ -9,65 +8,62 @@
 #define Radius 0.02
 
 Quiz::Quiz(Motor* motor,
+           Transceiver* transceiver,
            uint8_t pinA,  // up
            uint8_t pinB,  // back
            uint8_t pinC,  // ok
            uint8_t pinD,  // down
-           uint8_t pinDataIn,
-           uint8_t pinDataOut,
            uint8_t pinScoreA,
            uint8_t pinScoreB,
            uint8_t pinScoreC,
            uint8_t pinCorrect,
            uint8_t pinWrong,
            bool isGameMaster) {
-    this->motor = motor;
-    this->pinA = pinA;
-    this->pinB = pinB;
-    this->pinC = pinC;
-    this->scorePins = new uint8_t[3]{pinScoreA, pinScoreB, pinScoreC};
-    this->pinCorrect = pinCorrect;
-    this->pinWrong = pinWrong;
-    this->pinD = pinD;
-    this->pinDataIn = pinDataIn;
-    this->pinDataOut = pinDataOut;
-    this->isGameMaster = isGameMaster;
-    this->isAtStart = true;
-    this->phase = Phase::DeepSleep;
-    this->score = 0;
-    this->opositeScore = 0;
+    this->_motor = motor;
+    this->_transceiver = transceiver;
+    this->_pinA = pinA;
+    this->_pinB = pinB;
+    this->_pinC = pinC;
+    this->_scorePins = new uint8_t[3]{pinScoreA, pinScoreB, pinScoreC};
+    this->_pinCorrect = pinCorrect;
+    this->_pinWrong = pinWrong;
+    this->_pinD = pinD;
+    this->_isGameMaster = isGameMaster;
+    this->_isAtStart = true;
+    this->_phase = Phase::DeepSleep;
+    this->_score = 0;
+    this->_opositeScore = 0;
     // TODO: set correct numbers for answers
-    this->questions = new uint8_t[13]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    this->currentQuestion = 0;
+    this->_questions = new uint8_t[13]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    this->_currentQuestion = 0;
 
     pinMode(pinA, INPUT);
     pinMode(pinB, INPUT);
     pinMode(pinC, INPUT);
     pinMode(pinD, INPUT);
-    pinMode(pinDataIn, INPUT);
-    pinMode(pinDataOut, OUTPUT);
 };
 
 void Quiz::deepSleep() {
-    if (digitalRead(pinDataIn) == 1) {
-        this->phase = Phase::QuestionChoice;
+    this->_transceiver->receive();
+    if (this->_transceiver->isReady() && this->_transceiver->value() == 1) {
+        this->_phase = Phase::QuestionChoice;
     };
 }
 
 void Quiz::rotateBack() {
-    this->motor->rotateLeft(
-        this->calculateTime(QuestionHeight * currentQuestion));
-    this->phase = Phase::QuestionChoice;
+    this->_motor->rotateLeft(
+        this->calculateTime(QuestionHeight * _currentQuestion));
+    this->_phase = Phase::QuestionChoice;
 }
 
 void Quiz::wakeUp() {
-    digitalWrite(pinDataOut, 1);
-    this->phase = Phase::QuestionChoice;
+    this->_transceiver->send(1);
+    this->_phase = Phase::QuestionChoice;
 }
 
 void Quiz::goSleep() {
-    if (this->score == 3 || this->opositeScore == 3) {
-        this->phase = Phase::DeepSleep;
+    if (this->_score == 3 || this->_opositeScore == 3) {
+        this->_phase = Phase::DeepSleep;
     }
 }
 
@@ -76,77 +72,77 @@ double Quiz::calculateTime(double length) {
 }
 
 void Quiz::chooseQuestion() {
-    if (this->isGameMaster) {
-        if (touchRead(this->pinA) > Threshold) {
-            if (this->currentQuestion > 0) {
-                this->motor->rotateLeft(this->calculateTime(QuestionHeight));
-                currentQuestion--;
+    if (this->_isGameMaster) {
+        if (touchRead(this->_pinA) > Threshold) {
+            if (this->_currentQuestion > 0) {
+                this->_motor->rotateLeft(this->calculateTime(QuestionHeight));
+                _currentQuestion--;
             }
-        } else if (touchRead(this->pinC) > Threshold) {
-            digitalWrite(this->pinDataOut, currentQuestion);
-            this->phase = Phase::AnswerQuestion;
-        } else if (touchRead(this->pinD) > Threshold) {
-            if (this->currentQuestion < 12) {
-                this->motor->rotateRight(this->calculateTime(QuestionHeight));
-                currentQuestion++;
+        } else if (touchRead(this->_pinC) > Threshold) {
+            this->_transceiver->send(_currentQuestion);
+            this->_phase = Phase::AnswerQuestion;
+        } else if (touchRead(this->_pinD) > Threshold) {
+            if (this->_currentQuestion < 12) {
+                this->_motor->rotateRight(this->calculateTime(QuestionHeight));
+                _currentQuestion++;
             }
         }
     } else {
-        if (digitalRead(this->pinDataIn) > 0) {
-            currentQuestion = digitalRead(this->pinDataIn);
-            this->phase = Phase::AnswerQuestion;
-            this->motor->rotateRight(
-                this->calculateTime(QuestionHeight * currentQuestion));
+        if (this->_transceiver->isReady() && this->_transceiver->value() > 0) {
+            _currentQuestion = this->_transceiver->value();
+            this->_phase = Phase::AnswerQuestion;
+            this->_motor->rotateRight(
+                this->calculateTime(QuestionHeight * _currentQuestion));
         }
     }
 }
 
 void Quiz::answerQuestion() {
-    if (!this->isGameMaster) {
+    if (!this->_isGameMaster) {
         uint8_t pressedButton = 0;
-        if (touchRead(this->pinA) > Threshold) {
+        if (touchRead(this->_pinA) > Threshold) {
             pressedButton = 1;
-        } else if (touchRead(this->pinB) > Threshold) {
+        } else if (touchRead(this->_pinB) > Threshold) {
             pressedButton = 2;
-        } else if (touchRead(this->pinC) > Threshold) {
+        } else if (touchRead(this->_pinC) > Threshold) {
             pressedButton = 3;
-        } else if (touchRead(this->pinD) > Threshold) {
+        } else if (touchRead(this->_pinD) > Threshold) {
             pressedButton = 4;
         }
-        digitalWrite(this->pinDataOut, pressedButton);
-        if (pressedButton == this->questions[currentQuestion]) {
-            this->score++;
-            for (uint8_t i = 0; i < this->score; i++) {
-                digitalWrite(this->scorePins[i], HIGH);
+        this->_transceiver->send(pressedButton);
+        if (pressedButton == this->_questions[_currentQuestion]) {
+            this->_score++;
+            for (uint8_t i = 0; i < this->_score; i++) {
+                digitalWrite(this->_scorePins[i], HIGH);
             }
-            digitalWrite(this->pinCorrect, HIGH);
+            digitalWrite(this->_pinCorrect, HIGH);
             delay(2000);
-            digitalWrite(this->pinCorrect, LOW);
+            digitalWrite(this->_pinCorrect, LOW);
         } else {
-            this->opositeScore++;
-            digitalWrite(this->pinWrong, HIGH);
+            this->_opositeScore++;
+            digitalWrite(this->_pinWrong, HIGH);
             delay(2000);
-            digitalWrite(this->pinWrong, LOW);
+            digitalWrite(this->_pinWrong, LOW);
         }
         this->rotateBack();
         this->goSleep();
 
     } else {
-        if (digitalRead(this->pinDataIn) > 0) {
-            if (this->questions[this->currentQuestion] ==
-                digitalRead(this->pinDataIn)) {
-                this->opositeScore++;
-                digitalWrite(this->pinWrong, HIGH);
+        if (this->_transceiver->isReady() && this->_transceiver->value() > 0) {
+            if (this->_questions[this->_currentQuestion] ==
+                this->_transceiver->value()) {
+                this->_opositeScore++;
+                digitalWrite(this->_pinWrong, HIGH);
                 delay(2000);
-                digitalWrite(this->pinWrong, LOW);
+                digitalWrite(this->_pinWrong, LOW);
             } else {
-                this->score++;
-                for (uint8_t i = 0; i < this->score; i++) {
-                    digitalWrite(this->scorePins[i], HIGH);
+                this->_score++;
+                for (uint8_t i = 0; i < this->_score; i++) {
+                    digitalWrite(this->_scorePins[i], HIGH);
                 }
-                digitalWrite(this->pinCorrect, HIGH);
+                digitalWrite(this->_pinCorrect, HIGH);
                 delay(2000);
-                digitalWrite(this->pinCorrect, LOW);
+                digitalWrite(this->_pinCorrect, LOW);
             }
             this->rotateBack();
             this->goSleep();
@@ -155,7 +151,7 @@ void Quiz::answerQuestion() {
 }
 
 void Quiz::run() {
-    switch (this->phase) {
+    switch (this->_phase) {
         case (Phase::DeepSleep):
             this->deepSleep();
             break;
