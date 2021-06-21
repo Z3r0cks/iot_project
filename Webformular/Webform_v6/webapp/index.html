@@ -6,29 +6,30 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP WebApp</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <h1>Naturquiz</h1>
 
-    <form id="form" type="GET">
+    <!--<h1>Naturquiz</h1> -->
+
+    <form class="wrapper" id="form" type="GET">
         <input type="text" name="question" id="question" value="Ich heiße Klaus">
         <h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1>
         <h2 class="text">Neue Frage erstellen</h2>
-        <label class="text question">Frage</label>
-
-        <input class="input m-b" type="text" name="answerA" id="answerA" value="ä Ä ö Ö ü Ü">
+        <textarea class="textarea m-b" name="" id="" cols="30" rows="10"></textarea>
         <label class="text question" for="answerA">Antwort A</label>
-        <input class="input m-b" type="text" name="answerB" id="answerB">
+        <input class="input m-b" type="text" name="answerA" id="answerA">
         <label class="text question" for="answerB">Antwort B</label>
-        <input class="input m-b" type="text" name="answerC" id="answerC">
+        <input class="input m-b" type="text" name="answerB" id="answerB">
         <label class="text question" for="answerC">Antwort C</label>
-        <input class="input m-b" type="text" name="answerD" id="answerD">
+        <input class="input m-b" type="text" name="answerC" id="answerC">
         <label class="text question" for="answerD">Antwort D</label>
-
-        <input class="btn" type="button" onclick="validateForm()" name="submit" value="Abschicken">
+        <input class="input m-b" type="text" name="answerD" id="answerD">
+        <!--<input class="btn" type="button" onclick="validateForm()" name="submit" value="Frage einreichen"> -->
+        <button class="btn" type="button" onclick="validateForm()" name="submit">Frage einreichen</button>
     </form>
+
     <button id="createLinkBtn" onclick="createLink('')">
         Starte Download </button>
 
