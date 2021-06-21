@@ -3,8 +3,8 @@
 #include "webapp-end.h"
 #include "webapp-start.h"
 
-const char* ssid = "ESP32-Access-Point";
-const char* password = NULL;
+const char *ssid = "ESP32-Access-Point";
+const char *password = NULL;
 
 String htmlstring = webappStart;
 
@@ -18,10 +18,12 @@ WiFiServer server(80);
 
 String header;
 
-String getInput(int begin, int end) {
+String getInput(int begin, int end)
+{
     String input;
 
-    for (int i = begin + 4; i < end; i++) {
+    for (int i = begin + 4; i < end; i++)
+    {
         input += header.charAt(i);
     }
 
@@ -29,7 +31,8 @@ String getInput(int begin, int end) {
     return input;
 }
 
-void setupWiFi() {
+void setupWiFi()
+{
     Serial.print("Setting AP (Access Point)…");
     WiFi.softAP(ssid, password);
 
@@ -40,30 +43,38 @@ void setupWiFi() {
     server.begin();
 }
 
-void setupSPIFFS() {
-    if (!SPIFFS.begin(true)) {
+void setupSPIFFS()
+{
+    if (!SPIFFS.begin(true))
+    {
         Serial.println("An Error has occurred while mounting SPIFFS");
         ESP.restart();
     }
 }
 
-void setup() {
+void setup()
+{
     Serial.begin(9600);
     setupSPIFFS();
     setupWiFi();
 }
 
-void loop() {
+void loop()
+{
     client = server.available();
 
-    if (client) {
+    if (client)
+    {
         String currentLine = "";
-        while (client.connected()) {
-            if (client.available()) {
+        while (client.connected())
+        {
+            if (client.available())
+            {
                 char c = client.read();
                 Serial.write(c);
                 header += c;
-                if (c == '\n') {
+                if (c == '\n')
+                {
                     client.println("HTTP/1.1 200 OK");
                     client.println("Content-type:text/html");
                     client.println("Connection: close");
@@ -71,7 +82,8 @@ void loop() {
                     htmlstring = webappStart;
                     client.println(htmlstring);
 
-                    if (header.indexOf("GET /save") >= 0) {
+                    if (header.indexOf("GET /save") >= 0)
+                    {
                         download = false;
                         File questionFile =
                             SPIFFS.open("/newQuestions.txt", FILE_APPEND);
@@ -90,15 +102,20 @@ void loop() {
                             "__D: " + getInput(indexD, header.length() - 11));
 
                         questionFile.close();
-                    } else if (header.indexOf("GET /delete") >= 0) {
+                    }
+                    else if (header.indexOf("GET /delete") >= 0)
+                    {
                         SPIFFS.remove("/newQuestions.txt");
-                    } else if (header.indexOf("GET /iotsose21") >= 0) {
+                    }
+                    else if (header.indexOf("GET /iotsose21") >= 0)
+                    {
                         downloadContent = "";
                         File questionFile = SPIFFS.open("/newQuestions.txt");
 
                         Serial.println("File Content:");
 
-                        while (questionFile.available()) {
+                        while (questionFile.available())
+                        {
                             downloadContent += char(questionFile.read());
                         }
                         questionFile.close();
@@ -111,11 +128,15 @@ void loop() {
                             "<button onclick='deleteSPIFFS(); "
                             "window.location.reload();'>Erstellte Fragen "
                             "Löschen</button>");
+                        client.println(
+                            "<p>Frage wurde eingereicht<p>");
                     }
 
                     client.println(webappEnd);
                     break;
-                } else {
+                }
+                else
+                {
                     currentLine = "";
                 }
             }

@@ -6,28 +6,107 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP WebApp</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #436436;
+        }
+
+        h2 {
+            margin: 30px 0 8px 0;
+            padding: 0;
+        }
+
+        .question {
+            font-size: 18px;
+            margin-bottom: 1px;
+            padding-left: 8px;
+        }
+
+        .wrapper {
+            max-width: 450px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 0 20px;
+        }
+
+        .text {
+            color: #fefefe;
+            font-family: "Roboto", sans-serif;
+        }
+
+        .textarea,
+        input {
+            border-radius: 24px;
+            background-color: #7a8f72;
+            border: none;
+            color: #3d3d3d;
+            padding: 5px 20px;
+            margin-bottom: 10px;
+        }
+
+        .input {
+            height: 35px;
+        }
+
+        .btn {
+            height: 100px;
+            width: 100px;
+            border-radius: 50px;
+            border: none;
+            margin: 30px auto 0 auto;
+            background-color: #7a8f72;
+            color: white;
+            font-size: 18px;
+        }
+
+        .btn:hover {
+            background-color: #495544;
+        }
+        #error{
+            display: none;
+            background: rgba(255, 94, 0, 0.5);
+            color: rgb(230, 230, 230);
+            padding: 0.2em;
+        }
+        #success{
+            display: none;
+            border:2px solid #fefefe;
+            padding: 0.5em;
+        }
+    </style>
 </head>
 
 <body>
 
-    <!--<h1>Naturquiz</h1> -->
-
     <form class="wrapper" id="form" type="GET">
-        <input type="text" name="question" id="question" value="Ich heiße Klaus">
         <h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1>
         <h2 class="text">Neue Frage erstellen</h2>
-        <textarea class="textarea m-b" name="" id="" cols="30" rows="10"></textarea>
+
+        <label class="text question" for="question">Frage</label>
+        <textarea class="textarea m-b" name="" id="question cols=" 30" rows="10" onkeyup="checkAllInputs()"
+            onfocus="inputActiveColor(this)" onblur="inputPassiveColor(this)"></textarea>
+
         <label class="text question" for="answerA">Antwort A</label>
-        <input class="input m-b" type="text" name="answerA" id="answerA">
+        <input class="input m-b" id="answerA" type="text" name="answerA" id="answerA" onkeyup="checkAllInputs()"
+            onfocus="inputActiveColor(this)" onblur="inputPassiveColor(this)">
+
         <label class="text question" for="answerB">Antwort B</label>
-        <input class="input m-b" type="text" name="answerB" id="answerB">
+        <input class="input m-b" type="text" name="answerB" id="answerB" onkeyup="checkAllInputs()"
+            onfocus="inputActiveColor(this)" onblur="inputPassiveColor(this)">
+
         <label class="text question" for="answerC">Antwort C</label>
-        <input class="input m-b" type="text" name="answerC" id="answerC">
+        <input class="input m-b" type="text" name="answerC" id="answerC" onkeyup="checkAllInputs()"
+            onfocus="inputActiveColor(this)" onblur="inputPassiveColor(this)">
+
         <label class="text question" for="answerD">Antwort D</label>
-        <input class="input m-b" type="text" name="answerD" id="answerD">
-        <!--<input class="btn" type="button" onclick="validateForm()" name="submit" value="Frage einreichen"> -->
-        <button class="btn" type="button" onclick="validateForm()" name="submit">Frage einreichen</button>
+        <input class="input m-b" type="text" name="answerD" id="answerD" onkeyup="checkAllInputs()"
+            onfocus="inputActiveColor(this)" onblur="inputPassiveColor(this)">
+
+        <!-- <input class="btn" type="button" onclick="validateForm()" name="submit" value="Frage einreichen"> -->
+        <p id="error" class="text">Alle Felder müssen ausgefüllt sein.</p>
+        <p id="success" class="text">Die Frage wurde erfolgreich eingereicht. Sie wird geprüft und ggf. in das Quiz aufgenommen.</p>
+        <button class="btn" type="button" name="submit" onclick="formNotActive()">Frage einreichen</button>
     </form>
 
     <button id="createLinkBtn" onclick="createLink('')">
@@ -35,15 +114,14 @@
 
     <script>
         function validateForm() {
-            console.log('validate')
-
             var xmlhttp = new XMLHttpRequest();
-            xmlhttp.open("GET", "/save/__!q" + document.forms["form"]["question"].value +
+            xmlhttp.open("GET", "/save/__!q" + document.querySelector('textarea').value +
                 "__!a" + document.forms["form"]["answerA"].value +
                 "__!b" + document.forms["form"]["answerB"].value +
                 "__!c" + document.forms["form"]["answerC"].value +
                 "__!d" + document.forms["form"]["answerD"].value, true);
             xmlhttp.send();
+            document.getElementById('success').style.display = 'block';
         }
 
         function deleteSPIFFS() {
@@ -140,6 +218,46 @@
                 document.body.removeChild(element);
             } else
                 alert('Es wurde keine Fragen eingereicht')
+        }
+
+        var inputs = document.querySelectorAll('input');
+        console.log(document.querySelector('textarea'));
+        var button = document.querySelector('button');
+
+        function checkAllInputs() {
+            var check = 0;
+            console.log('hier')
+            if (document.querySelector('textarea').value.length > 0)
+                check++;
+
+            for (let i = 0; i < inputs.length; i++) {
+                if (inputs[i].value.length > 0) {
+                    check++
+                    console.log('check ' + check)
+                }
+            }
+            if (check == 5) {
+                document.querySelector('button').style.backgroundColor = '#61B458'
+                button.setAttribute('onclick', 'validateForm()');
+                document.getElementById('error').style.display = 'none'
+            } else {
+                document.querySelector('button').style.backgroundColor = '#7a8f72'
+                button.removeAttribute('onclick')
+                document.getElementById('error').style.display = 'block'
+                document.getElementById('success').style.display = 'none';
+            }
+        }
+
+        function inputActiveColor(input) {
+            input.style.backgroundColor = '#E0E0E0';
+        }
+
+        function inputPassiveColor(input) {
+            input.style.backgroundColor = '#7a8f72';
+        }
+
+        function formNotActive(){
+            document.getElementById('error').style.display = 'block'
         }
     </script>
 

@@ -1,15 +1,14 @@
 const char webappEnd[] = R"=====(
-        <script>
+    <script>
         function validateForm() {
-            console.log('validate')
-
             var xmlhttp = new XMLHttpRequest();
-            xmlhttp.open("GET", "/save/__!q" + document.forms["form"]["question"].value +
+            xmlhttp.open("GET", "/save/__!q" + document.querySelector('textarea').value +
                 "__!a" + document.forms["form"]["answerA"].value +
                 "__!b" + document.forms["form"]["answerB"].value +
                 "__!c" + document.forms["form"]["answerC"].value +
                 "__!d" + document.forms["form"]["answerD"].value, true);
             xmlhttp.send();
+            document.getElementById('success').style.display = 'block';
         }
 
         function deleteSPIFFS() {
@@ -107,7 +106,49 @@ const char webappEnd[] = R"=====(
             } else
                 alert('Es wurde keine Fragen eingereicht')
         }
+
+        var inputs = document.querySelectorAll('input');
+        console.log(document.querySelector('textarea'));
+        var button = document.querySelector('button');
+
+        function checkAllInputs() {
+            var check = 0;
+            console.log('hier')
+            if (document.querySelector('textarea').value.length > 0)
+                check++;
+
+            for (let i = 0; i < inputs.length; i++) {
+                if (inputs[i].value.length > 0) {
+                    check++
+                    console.log('check ' + check)
+                }
+            }
+            if (check == 5) {
+                document.querySelector('button').style.backgroundColor = '#61B458'
+                button.setAttribute('onclick', 'validateForm()');
+                document.getElementById('error').style.display = 'none'
+            } else {
+                document.querySelector('button').style.backgroundColor = '#7a8f72'
+                button.removeAttribute('onclick')
+                document.getElementById('error').style.display = 'block'
+                document.getElementById('success').style.display = 'none';
+            }
+        }
+
+        function inputActiveColor(input) {
+            input.style.backgroundColor = '#E0E0E0';
+        }
+
+        function inputPassiveColor(input) {
+            input.style.backgroundColor = '#7a8f72';
+        }
+
+        function formNotActive(){
+            document.getElementById('error').style.display = 'block'
+        }
     </script>
 
-</body></html>
+</body>
+
+</html>
 )=====";
