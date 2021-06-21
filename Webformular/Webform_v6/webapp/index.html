@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP WebApp</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -14,18 +14,20 @@
 
     <form id="form" type="GET">
         <input type="text" name="question" id="question" value="Ich heiße Klaus">
-        <label for="question">Frage</label>
+        <h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1>
+        <h2 class="text">Neue Frage erstellen</h2>
+        <label class="text question">Frage</label>
 
-        <input type="text" name="answerA" id="answerA" value="ä Ä ö Ö ü Ü">
-        <label for="answerA">Antwort A</label>
-        <input type="text" name="answerB" id="answerB">
-        <label for="answerB">Antwort B</label>
-        <input type="text" name="answerC" id="answerC">
-        <label for="answerC">Antwort C</label>
-        <input type="text" name="answerD" id="answerD">
-        <label for="answerD">Antwort D</label>
+        <input class="input m-b" type="text" name="answerA" id="answerA" value="ä Ä ö Ö ü Ü">
+        <label class="text question" for="answerA">Antwort A</label>
+        <input class="input m-b" type="text" name="answerB" id="answerB">
+        <label class="text question" for="answerB">Antwort B</label>
+        <input class="input m-b" type="text" name="answerC" id="answerC">
+        <label class="text question" for="answerC">Antwort C</label>
+        <input class="input m-b" type="text" name="answerD" id="answerD">
+        <label class="text question" for="answerD">Antwort D</label>
 
-        <input type="button" onclick="validateForm()" name="submit" value="Abschicken">
+        <input class="btn" type="button" onclick="validateForm()" name="submit" value="Abschicken">
     </form>
     <button id="createLinkBtn" onclick="createLink('')">
         Starte Download </button>
