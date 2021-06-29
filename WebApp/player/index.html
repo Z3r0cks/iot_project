@@ -1,16 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player</title>
+    
 </head>
+
 <body>
     <h3>COde ingeben</h3>
 
     <input type="text" name="gamecode-input" id="gamecode-input">
 
-    <button id="enter-game"></button>
+    <button id="enter-game">Spiel beitreten</button>
 </body>
+<script defer>
+    document.getElementById('enter-game').addEventListener('click', function () {
+        ajaxCall("enterGame");
+    });
+
+    function ajaxCall(link){
+        console.log(link);
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", "/"+link, true);
+        xmlhttp.send();
+    }
+</script>
+<span onload="window.location.assign('')"></span>
 </html>
+

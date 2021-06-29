@@ -1,23 +1,26 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
-// // #include "webapp-end.h"
-// // #include "webapp-start.h"
-#include "master-index.h"
+#include "player.h"
 #include "Arduino.h"
 
 const char *ssid = "ESP32-Access-Point";
 const char *password = NULL;
 
-
 WiFiClient client;
-
-// bool download = false;
-
-// String downloadContent;
 
 WiFiServer server(80);
 
 String header;
+
+void prepareHTML()
+{
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-type:text/html");
+    client.println("Connection: close");
+    client.println();
+    // htmlstring = webappStart;
+    // client.println(webstring);
+}
 
 void setupWiFi()
 {
@@ -27,7 +30,6 @@ void setupWiFi()
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(IP);
-
     server.begin();
 }
 
@@ -40,7 +42,6 @@ void setup()
 
 void loop()
 {
-
     client = server.available();
 
     if (client)
@@ -55,30 +56,48 @@ void loop()
                 header += c;
                 if (c == '\n')
                 {
-                    client.println("HTTP/1.1 200 OK");
-                    client.println("Content-type:text/html");
-                    client.println("Connection: close");
-                    client.println();
-                    // htmlstring = webappStart;
-                    client.println(masterIndex);
+                    // client.println("HTTP/1.1 200 OK");
+                    // client.println("Content-type:text/html");
+                    // client.println("Connection: close");
+                    // client.println();
+                    // // htmlstring = webappStart;
+                    // client.println(playerIndexHTML);
+                    prepareHTML();
+                    client.println(playerIndexHTML);
 
-                    if(header.indexOf("GET /save") > 0){
-                        // do some stuff
+                    Serial.println("Herader " + header);
+                    if (header.indexOf("GET /enterGame") >= 0)
+                    {
+                        Serial.println("enter Game");
                     }
 
-                    //   client.println(webappEnd);
+                    client.println("</body>");
+                    client.println(playerIndexJS);
+                    client.println("</html>");
+
                     break;
                 }
+
                 else
                 {
                     currentLine = "";
                 }
+                Serial.println("wifi client available");
             }
+            Serial.println("wifi client connected");
         }
 
         header = "";
         client.stop();
         Serial.println("Client disconnected.");
         Serial.println("");
+    }
+
+    if (Serial.available())
+    {
+        Serial.println("available");
+        String inputSerial = Serial.readString();
+        if (inputSerial.equals("enter Game"))
+            Serial.println("IN GAME");
     }
 }
