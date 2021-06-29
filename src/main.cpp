@@ -1,42 +1,104 @@
-#include <Arduino.h>
-#include <Quiz.h>
+#include <SPIFFS.h>
+#include <WiFi.h>
+#include "webapp-end.h"
+#include "webapp-start.h"
 
-#define MOTOR_A 27
-#define MOTOR_B 26
-#define MOTOR_V 25
-#define BUTTON_A 15
-#define BUTTON_B 2
-#define BUTTON_C 0
-#define BUTTON_D 4
-#define LED_CORRECT 16
-#define LED_WRONG 17
-#define LED_SCORE_A 32
-#define LED_SCORE_B 33
-#define LED_SCORE_C 34
-#define PIN_DATA_IN 18
-#define PIN_DATA_OUT 19
+const char *ssid = "ESP32-Access-Point";
+const char *password = NULL;
 
-Motor* motor;
-Transceiver* transceiver;
-Quiz* quiz;
+String htmlstring = webappStart;
 
-void setup() {
-    Serial.begin(7200);
-    pinMode(MOTOR_A, OUTPUT);
-    pinMode(MOTOR_B, OUTPUT);
-    pinMode(MOTOR_V, OUTPUT);
-    motor = new Motor(MOTOR_A, MOTOR_B, MOTOR_V);
-    motor->setBrake(true);
-    transceiver = new Transceiver(PIN_DATA_IN, PIN_DATA_OUT);
-    quiz = new Quiz(motor, transceiver, BUTTON_A, BUTTON_B, BUTTON_C, BUTTON_D,
-                    LED_SCORE_A, LED_SCORE_B, LED_SCORE_C, LED_CORRECT,
-                    LED_WRONG, true);
-    Serial.println("Setup DONE");
+WiFiClient client;
+
+bool download = false;
+
+String downloadContent;
+
+WiFiServer server(80);
+
+String header;
+
+String getInput(int begin, int end)
+{
+    String input;
+
+    for (int i = begin + 4; i < end; i++)
+    {
+        input += header.charAt(i);
+    }
+
+    Serial.println("input " + input);
+    return input;
 }
 
-bool clockwise = true;
+void setupWiFi()
+{
+    Serial.print("Setting AP (Access Point)…");
+    WiFi.softAP(ssid, password);
 
-void loop() {
-    motor->run();
-    quiz->run();
+    IPAddress IP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(IP);
+
+    server.begin();
+}
+
+void setupSPIFFS()
+{
+    if (!SPIFFS.begin(true))
+    {
+        Serial.println("An Error has occurred while mounting SPIFFS");
+        ESP.restart();
+    }
+}
+
+void setup()
+{
+    Serial.begin(9600);
+    setupSPIFFS();
+    setupWiFi();
+}
+
+void loop()
+{
+    client = server.available();
+
+    if (client)
+    {
+        String currentLine = "";
+        while (client.connected())
+        {
+            if (client.available())
+            {
+                char c = client.read();
+                Serial.write(c);
+                header += c;
+                if (c == '\n')
+                {
+                    client.println("HTTP/1.1 200 OK");
+                    client.println("Content-type:text/html");
+                    client.println("Connection: close");
+                    client.println();
+                    htmlstring = webappStart;
+                    client.println(htmlstring);
+
+                    if(header.indexOf("GET /save") > 0){
+                        // do some stuff
+                    }
+
+                      client.println(webappEnd);
+                    break;
+                }
+                else
+                {
+                    currentLine = "";
+                }
+            }
+        }
+
+        header = "";
+        client.stop();
+        Serial.println("Client disconnected.");
+        Serial.println("");
+    }
 }
