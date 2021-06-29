@@ -9,6 +9,8 @@ const char *password = NULL;
 WiFiClient client;
 WiFiServer server(80);
 
+String key;
+
 void setupWiFi()
 {
     Serial.print("Setting up Acces Point");
@@ -51,6 +53,10 @@ void loop()
 
     client = server.available();
 
+    if(Serial.available()) {
+        
+    }
+ 
     if (client)
     {
         while (client.connected())
@@ -61,13 +67,11 @@ void loop()
                 Serial.println(header);
                 if (header.endsWith("\n"))
                 {
-                    if (header.indexOf("GET /")) {
-                        client.println("HTTP/1.1 200 OK");
-                        client.print("Content-type: ");
-                        client.println("text/html");
-                        client.println("Connection: close");
-                        client.println();
-                        client.println(masterIndex);
+                    if(header.indexOf("GET /index.js") == 0) {
+                        key = (millis() % 9000) + 1000;
+                        respond("document.querySelector('#gamecode').innerHTML='" + key + "';", "application/javascript");
+                    } else {
+                        respond(masterIndex);
                     }
                     break;
                 }
