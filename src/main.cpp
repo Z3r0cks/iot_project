@@ -1,41 +1,49 @@
+#include "Arduino.h"
 #include <SPIFFS.h>
 #include <WiFi.h>
-// // #include "webapp-end.h"
-// // #include "webapp-start.h"
-#include "master-index.h"
-#include "Arduino.h"
+#include <MasterHtml.h>
 
 const char *ssid = "ESP32-Access-Point";
 const char *password = NULL;
 
-
 WiFiClient client;
-
-// bool download = false;
-
-// String downloadContent;
-
 WiFiServer server(80);
-
-String header;
 
 void setupWiFi()
 {
-    Serial.print("Setting AP (Access Point)…");
+    Serial.print("Setting up Acces Point");
     WiFi.softAP(ssid, password);
 
     IPAddress IP = WiFi.softAPIP();
-    Serial.print("AP IP address: ");
+    Serial.print(" at ");
     Serial.println(IP);
 
     server.begin();
+}
+
+void respond(String data, String contentType)
+{
+    client.println("HTTP/1.1 200 OK");
+    client.print("Content-type: ");
+    client.println(contentType);
+    client.println("Connection: close");
+    client.println();
+    if (!data.isEmpty())
+    {
+        client.println(data);
+    }
+}
+
+void respond(String html)
+{
+    respond(html, "text/html");
 }
 
 void setup()
 {
     Serial.begin(7200);
     setupWiFi();
-    Serial.println("setup dome");
+    Serial.println("Setup done.");
 }
 
 void loop()
@@ -45,40 +53,29 @@ void loop()
 
     if (client)
     {
-        String currentLine = "";
         while (client.connected())
         {
             if (client.available())
             {
-                char c = client.read();
-                Serial.write(c);
-                header += c;
-                if (c == '\n')
+                String header = client.readString();
+                Serial.println(header);
+                if (header.endsWith("\n"))
                 {
-                    client.println("HTTP/1.1 200 OK");
-                    client.println("Content-type:text/html");
-                    client.println("Connection: close");
-                    client.println();
-                    // htmlstring = webappStart;
-                    client.println(masterIndex);
-
-                    if(header.indexOf("GET /save") > 0){
-                        // do some stuff
+                    if (header.indexOf("GET /")) {
+                        client.println("HTTP/1.1 200 OK");
+                        client.print("Content-type: ");
+                        client.println("text/html");
+                        client.println("Connection: close");
+                        client.println();
+                        client.println(masterIndex);
                     }
-
-                    //   client.println(webappEnd);
                     break;
-                }
-                else
-                {
-                    currentLine = "";
                 }
             }
         }
 
-        header = "";
         client.stop();
         Serial.println("Client disconnected.");
-        Serial.println("");
+        Serial.println();
     }
 }
