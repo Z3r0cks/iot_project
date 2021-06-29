@@ -1,35 +1,23 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
-#include "webapp-end.h"
-#include "webapp-start.h"
+// // #include "webapp-end.h"
+// // #include "webapp-start.h"
+#include "master-index.h"
+#include "Arduino.h"
 
 const char *ssid = "ESP32-Access-Point";
 const char *password = NULL;
 
-String htmlstring = webappStart;
 
 WiFiClient client;
 
-bool download = false;
+// bool download = false;
 
-String downloadContent;
+// String downloadContent;
 
 WiFiServer server(80);
 
 String header;
-
-String getInput(int begin, int end)
-{
-    String input;
-
-    for (int i = begin + 4; i < end; i++)
-    {
-        input += header.charAt(i);
-    }
-
-    Serial.println("input " + input);
-    return input;
-}
 
 void setupWiFi()
 {
@@ -43,24 +31,16 @@ void setupWiFi()
     server.begin();
 }
 
-void setupSPIFFS()
-{
-    if (!SPIFFS.begin(true))
-    {
-        Serial.println("An Error has occurred while mounting SPIFFS");
-        ESP.restart();
-    }
-}
-
 void setup()
 {
-    Serial.begin(9600);
-    setupSPIFFS();
+    Serial.begin(7200);
     setupWiFi();
+    Serial.println("setup dome");
 }
 
 void loop()
 {
+
     client = server.available();
 
     if (client)
@@ -79,14 +59,14 @@ void loop()
                     client.println("Content-type:text/html");
                     client.println("Connection: close");
                     client.println();
-                    htmlstring = webappStart;
-                    client.println(htmlstring);
+                    // htmlstring = webappStart;
+                    client.println(masterIndex);
 
                     if(header.indexOf("GET /save") > 0){
                         // do some stuff
                     }
 
-                      client.println(webappEnd);
+                    //   client.println(webappEnd);
                     break;
                 }
                 else
