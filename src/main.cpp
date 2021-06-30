@@ -11,7 +11,7 @@
 #define RXD 16
 #define TXD 17
 
-const char *ssid = "ESP32-Access-Point";
+const char *ssid = "Nature Quiz (Player)";
 const char *password = NULL;
 
 WiFiClient client;
