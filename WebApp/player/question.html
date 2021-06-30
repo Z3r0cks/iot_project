@@ -1,25 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frage</title>
 </head>
+
 <body>
     <h1>Frage beantworten</h1>
     <p id="question">Frage</p>
     <div id="answers">
-        <span id="answerA"></span>
-        <span id="answerC"></span>
-        <span id="answerD"></span>
-        <span id="answerE"></span>
+        <span id="answerA">Test</span>
+        <span id="answerB">TEst2</span>
+        <span id="answerC">fdsfds</span>
+        <span id="answerD">adsad</span>
     </div>
-    <button id="select-answer">Antwort einloggen</button>
+    <button id="login-answer">Antwort einloggen</button>
 
     <div id="correct-answer">
         <p>A: Baum</p>
         <p id="explenation"></p>
     </div>
 </body>
+<script>
+    document.getElementById('answerA').addEventListener('mouseover', function () {
+        selectAnswer(this)
+    });
+    document.getElementById('answerB').addEventListener('mouseover', function () {
+        selectAnswer(this)
+    });
+    document.getElementById('answerC').addEventListener('mouseover', function () {
+        selectAnswer(this)
+    });
+    document.getElementById('answerD').addEventListener('mouseover', function () {
+        selectAnswer(this)
+    });
+
+    var selectedAnswerGlobal
+
+    var questionID = "$questionID";
+
+    const myArray = [
+        "01_01", [
+            "Wegen der Höhenlage", "Wegen dem vielen Schnee", "Es wächst viel Löwenzahn in der Gegend",
+            "Wegen der guten Luft",
+            "Löwenzahn besitzen nicht nur eine Blüte sondern viele. Bienen werden davon angelockt.", "C"
+        ],
+        "01_02", [
+            "Weil Tannen besser Wärme speichern können",
+            "Weil die Nadeln eng beieinander liegen und sich dadurch gegenseitig wärmen",
+            "Durch eine Art Salz, was als Frostschutzmittel dient",
+            "Durch eine Art Zucker, was als Frostschutzmittel dient",
+            "Tannen speichen außerdem weniger Wasser und die Nadeln sind dicker. Bei Laubblätter haben kaum festes Gewebe und würden im Winter deshalb erfrieren.",
+            "Erklärung"
+        ],
+        "01_03", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "01_04", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "02_01", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "02_02", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "02_03", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "02_04", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "03_01", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "03_02", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "03_03", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "03_04", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "04_01", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "04_02", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "04_03", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ],
+        "04_04", [
+            "Antwort1", "Antwort2", "Antwort3", "Antwort4", "Erklärung"
+        ]
+    ];
+
+
+    for (let i = 0; i < myArray.length; i++) {
+        if (myArray[i] == questionID) {
+            document.getElementById('answerA').innerHTML = myArray[i + 1][0];
+            document.getElementById('answerB').innerHTML = myArray[i + 1][1];
+            document.getElementById('answerC').innerHTML = myArray[i + 1][2];
+            document.getElementById('answerD').innerHTML = myArray[i + 1][3];
+            document.getElementById('explenation').innerHTML = myArray[i + 1][4];
+        }
+    }
+
+
+    function selectAnswer(selectedAnswer) {
+        selectedAnswerGlobal = selectedAnswer;
+        //style Selected Answer
+        console.log(selectedAnswer)
+
+        //style unselected answers
+        var allAnswers = document.getElementById('answers').children;
+        console.log(allAnswers);
+    }
+
+
+
+    document.getElementById('login-answer').addEventListener('click', function () {
+        var id = selectedAnswerGlobal.id;
+        console.log(id)
+        ajaxCall("/?selectedAnswer=" + id.substr(6));
+        window.location.reload();
+    });
+
+
+    function ajaxCall(link) {
+        console.log(link);
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", link, true);
+        xmlhttp.send();
+    }
+</script>
+
 </html>

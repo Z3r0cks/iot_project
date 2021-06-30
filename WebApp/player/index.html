@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player</title>
-    
+
 </head>
 
 <body>
@@ -16,18 +16,22 @@
 
     <button id="enter-game">Spiel beitreten</button>
 </body>
-<script defer>
+<script>
     document.getElementById('enter-game').addEventListener('click', function () {
-        ajaxCall("enterGame");
+        ajaxCall('/?sendKey='+document.getElementById('gamecode-input').value);
+        window.location.reload();
+        ajaxCall('/checkKey');
+        window.location.reload();
     });
 
-    function ajaxCall(link){
+    function ajaxCall(link) {
         console.log(link);
         var xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("GET", "/"+link, true);
+        xmlhttp.open("GET", link, true);
         xmlhttp.send();
     }
+
 </script>
 <span onload="window.location.assign('')"></span>
-</html>
 
+</html>
