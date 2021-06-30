@@ -7,7 +7,7 @@ const char masterIndex[] = R"=====(
 )=====";
 
 const char masterQuestions[] = R"=====(<div class="scoreWrapper">
-<div class="score">GM <span id="scoreM">$SCORE_PLAYER</span> : <span id="scoreP">$SCORE_MASTER</span> P</div>
+<div class="score">GM <span id="scoreM">$SCORE_MASTER</span> : <span id="scoreP">$SCORE_PLAYER</span> P</div>
 </div>
 <div class="headerWrapper">
     <h3 class="header">Wähle eine Kategorie aus</h1>

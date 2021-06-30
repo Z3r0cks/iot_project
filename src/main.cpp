@@ -232,6 +232,15 @@ void startSleepTimer()
     sleepTimerEnabled = true;
 }
 
+void resetLogic() {    
+    sleepTimerEnabled = false;
+    sleepTimer = endTime;
+    page = Page::INDEX;
+    scoreMaster = 0;
+    scorePlayer = 0;
+    lockQuestion = false;
+}
+
 void setup()
 {
     Serial.begin(7200);
@@ -242,14 +251,10 @@ void setup()
     pinMode(LED_SCORE_2, OUTPUT);
     pinMode(LED_SCORE_3, OUTPUT);
     setupWiFi();
-    sleepTimerEnabled = false;
-    sleepTimer = endTime;
-    page = Page::INDEX;
-    scoreMaster = 0;
-    scorePlayer = 0;
-    lockQuestion = false;
+    resetLogic();
     updateScoreLEDs();
-    Serial.println("Setup done.");
+    Serial.println("Master setup done.");
+    Serial2.println("?reset=true");
 }
 
 void loop()
@@ -265,6 +270,9 @@ void loop()
         serial = Serial2.readString();
         Serial.println(serial);
     }
+
+    if(serial.startsWith("?reset=true"))
+        resetLogic();
 
     client = server.available();
 
@@ -351,9 +359,8 @@ void loop()
                     {
                         if (serial.startsWith("?answer="))
                         {
-                            int index = serial.length();
                             respond(validation, "text/plain");
-                            String selectedAnswer = serial.substring(index - 1, index);
+                            String selectedAnswer = serial.substring(8, 9);
                             String correctAnswer = getAnswer(question);
                             if (selectedAnswer.equals(correctAnswer))
                             {
