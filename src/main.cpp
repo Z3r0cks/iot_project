@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include "player.h"
 #include "Arduino.h"
+#include "style.h"
 
 #define LED_CORRECT 19
 #define LED_WRONG 18
@@ -117,6 +118,10 @@ void loop()
                         //Send Key to GM
                         Serial.println("?key=" + header.substring(14, 18));
                         Serial2.println("?key=" + header.substring(14, 18));
+                    }
+                    else if (header.indexOf("GET /style.css") >= 0) {
+                        client.println(playerStyle);
+                        break;
                     }
                     else if (header.indexOf("GET /checkKey") >= 0)
                     {
