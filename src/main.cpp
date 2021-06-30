@@ -85,9 +85,9 @@ void setup()
 
 void loop()
 {
-    if (Serial.available())
+    if (Serial2.available())
     {
-        serial += Serial.readString();
+        serial += Serial2.readString();
         Serial.println(serial);
     }
 
@@ -123,8 +123,8 @@ void loop()
                         Serial.println("Check Key");
                         page = "checkKey";
 
-                        Serial.println(header.substring(14, 18));
                         Serial.println("?key=" + header.substring(14, 18));
+                        Serial2.println("?key=" + header.substring(14, 18));
                     }
                     else if (header.indexOf("GET /?selectedAnswer=") >= 0)
                     {
@@ -134,8 +134,8 @@ void loop()
                         selectedAnswer = header.substring(21, 22);
 
                         //Send selected answer to GM
-                        Serial.println(header.substring(21, 22));
-                        Serial2.println(header.substring(21, 22));
+                        Serial.println("?answer="+header.substring(21, 22));
+                        Serial2.println("?answer="+header.substring(21, 22));
                     }
                     else if (header.indexOf("GET /newQuestion") >= 0)
                     {
