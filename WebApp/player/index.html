@@ -5,20 +5,24 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Player</title>
-
 </head>
 
 <body>
-    <h3>COde ingeben</h3>
-
-    <input type="text" name="gamecode-input" id="gamecode-input">
-
-    <button id="enter-game">Spiel beitreten</button>
+    <div class="wrapper">
+        <div class="headerWrapper indexheaderWrapper">
+            <p class="indexHeader">Willkommen Player!</p>
+            <p>Gib den Code des <br> Gamemasters ein </p>
+        </div>
+        <input type="text" name="gamecode-input" id="gamecode-input" placeholder="code...">
+        <button class="btn" id="enter-game">Spiel beitreten</button>
+    </div>
 </body>
+
 <script>
     document.getElementById('enter-game').addEventListener('click', function () {
-        ajaxCall('/?sendKey='+document.getElementById('gamecode-input').value);
+        ajaxCall('/?sendKey=' + document.getElementById('gamecode-input').value);
         window.location.reload();
         ajaxCall('/checkKey');
         window.location.reload();
@@ -30,7 +34,6 @@
         xmlhttp.open("GET", link, true);
         xmlhttp.send();
     }
-
 </script>
 <span onload="window.location.assign('')"></span>
 

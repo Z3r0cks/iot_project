@@ -5,12 +5,22 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Player Wartem</title>
 </head>
 
 <body>
-    <p>Game Measter wählt eine Frage aus</p>
+    <div class="wrapper">
+        <div class="headerWrapper waitHeaderWrapper">
+            <p class="header waitHeader">Mach' dich bereit!</p>
+            <p class="header waitHeader">Der Gamemaster sucht <br> dir eine knifflige Frage aus.</p>
+        </div>
+    </div>
 </body>
+
+<!-- <body>
+    <p>Game Measter wählt eine Frage aus</p>
+</body> -->
 <script>
     const interval = setInterval(function () {
         const xhttp = new XMLHttpRequest();
