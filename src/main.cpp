@@ -6,11 +6,13 @@
 
 #define LED_CORRECT 19
 #define LED_WRONG 18
-#define LED_SCORE_1 17
-#define LED_SCORE_2 33
-#define LED_SCORE_3 14
+#define LED_SCORE_1 25
+#define LED_SCORE_2 26
+#define LED_SCORE_3 27
 #define RXD 16
 #define TXD 17
+
+#define endTime 10000
 
 const char *ssid = "Nature Quiz (Player)";
 const char *password = NULL;
@@ -23,11 +25,15 @@ String header;
 
 String page;
 String serial;
-int scorePlayer = 3;
-int scoreMaster = 2;
+int scorePlayer = 0;
+int scoreMaster = 0;
 String selectedAnswer;
 String selectedQuestion;
 boolean firstQuestion = true;
+
+unsigned long lastTime;
+bool sleepTimerEnabled;
+long sleepTimer;
 
 void prepareHTML()
 {
@@ -76,12 +82,54 @@ void setupWiFi()
     server.begin();
 }
 
+void updateSleepTimer()
+{
+    if (sleepTimerEnabled)
+    {
+        unsigned long time = millis();
+        sleepTimer -= time - lastTime;
+        lastTime = time;
+        if (sleepTimer <= 0)
+        {
+            page = "index";
+            scoreMaster = 0;
+            scorePlayer = 0;
+            digitalWrite(LED_CORRECT, LOW);
+            digitalWrite(LED_WRONG, LOW);
+            sleepTimerEnabled = false;
+            sleepTimer = endTime;
+        }
+    }
+}
+
+void startSleepTimer()
+{
+    lastTime = millis();
+    sleepTimerEnabled = true;
+}
+
+void resetLogic() {    
+    sleepTimerEnabled = false;
+    sleepTimer = endTime;
+    page = "index";
+    scoreMaster = 0;
+    scorePlayer = 0;
+}
+
 void setup()
 {
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
+    pinMode(LED_CORRECT, OUTPUT);
+    pinMode(LED_WRONG, OUTPUT);
+    pinMode(LED_SCORE_1, OUTPUT);
+    pinMode(LED_SCORE_2, OUTPUT);
+    pinMode(LED_SCORE_3, OUTPUT);
     setupWiFi();
-    Serial.println("setup dome");
+    resetLogic();
+    updateScoreLEDs();
+    Serial.println("Player setup done");
+    Serial2.println("?reset=true");
 }
 
 void loop()
@@ -91,6 +139,9 @@ void loop()
         serial += Serial2.readString();
         Serial.println(serial);
     }
+
+    if(serial.indexOf("?reset=true") >= 0)
+        resetLogic();
 
     client = server.available();
 
@@ -106,6 +157,16 @@ void loop()
                 header += c;
                 if (c == '\n')
                 {
+                    if (header.indexOf("GET /style.css") >= 0) {
+                    //HTML preperation
+                        client.println("HTTP/1.1 200 OK");
+                        client.println("Content-type:text/css");
+                        client.println("Connection: close");
+                        client.println();
+                        client.println(playerStyle);
+                        break;
+                    }
+
                     //HTML preperation
                     client.println("HTTP/1.1 200 OK");
                     client.println("Content-type:text/html");
@@ -118,10 +179,6 @@ void loop()
                         //Send Key to GM
                         Serial.println("?key=" + header.substring(14, 18));
                         Serial2.println("?key=" + header.substring(14, 18));
-                    }
-                    else if (header.indexOf("GET /style.css") >= 0) {
-                        client.println(playerStyle);
-                        break;
                     }
                     else if (header.indexOf("GET /checkKey") >= 0)
                     {
@@ -177,6 +234,8 @@ void loop()
                                 page = "wait";
                                 serial = "";
                                 break;
+                            } else {
+                                page = "index";
                             }
                         }
                         else if (serial.indexOf("?question=") >= 0)
@@ -198,10 +257,6 @@ void loop()
                             client.println("{\"correctAnswer\":\"" + test + "\", \"selectedAnswer\":\"" + selectedAnswer + "\"}");
                             page = "solution";
                             serial = "";
-                        }
-                        else
-                        {
-                            page = "index";
                         }
                         serial = "";
                         break;
@@ -249,6 +304,7 @@ void loop()
                             Serial.println("LOOSER");
                             client.println(playerLoose);
                         }
+                        startSleepTimer();
                     }
                     else
                     {
@@ -273,4 +329,5 @@ void loop()
         page = "win";
     }
     updateScoreLEDs();
+    updateSleepTimer();
 }

@@ -79,17 +79,17 @@
     </div>
 </body> -->
 <script>
-    document.getElementById('answerA').addEventListener('mouseover', function () {
-        selectAnswer(this)
+    document.getElementById('answerA').addEventListener('click', function () {
+        selectAnswer(this);
     });
-    document.getElementById('answerB').addEventListener('mouseover', function () {
-        selectAnswer(this)
+    document.getElementById('answerB').addEventListener('click', function () {
+        selectAnswer(this);
     });
-    document.getElementById('answerC').addEventListener('mouseover', function () {
-        selectAnswer(this)
+    document.getElementById('answerC').addEventListener('click', function () {
+        selectAnswer(this);
     });
-    document.getElementById('answerD').addEventListener('mouseover', function () {
-        selectAnswer(this)
+    document.getElementById('answerD').addEventListener('click', function () {
+        selectAnswer(this);
     });
 
     var selectedAnswerGlobal
@@ -212,7 +212,7 @@
     function selectAnswer(selectedAnswer) {
         selectedAnswerGlobal = selectedAnswer;
         //style Selected Answer
-        console.log(selectedAnswer)
+        console.log(selectedAnswer);
 
         //style unselected answers
         var allAnswers = document.getElementById('answers').children;
