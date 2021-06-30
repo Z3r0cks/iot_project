@@ -23,8 +23,8 @@ String header;
 
 String page;
 String serial;
-int scorePlayer = 3;
-int scoreMaster = 2;
+int scorePlayer = 0;
+int scoreMaster = 0;
 String selectedAnswer;
 String selectedQuestion;
 boolean firstQuestion = true;
