@@ -3,12 +3,16 @@
 #include <WiFi.h>
 #include <Master.h>
 
+#define RXD 16
+#define TXD 17
 #define LED_CORRECT 19
 #define LED_WRONG 18
 #define LED_SCORE_1 25
 #define LED_SCORE_2 26
 #define LED_SCORE_3 27
 
+#define ROUTE_QUESTION_ARRAY "GET /questionArray.js"
+#define ROUTE_EXPLANATION_ARRAY "GET /explanationArray.js"
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_QUESTIONS_JS "GET /questions.js"
 #define ROUTE_SOLUTION_JS "GET /solution.js"
@@ -29,13 +33,13 @@ enum Page
     ENDSCREEN
 };
 
-struct Answer
+struct Question
 {
     String id;
-    char letter;
+    String answer;
 };
 
-const char *ssid = "Naturquiz (Gamemaster)";
+const char *ssid = "Nature Quiz (Game Master)";
 const char *password = NULL;
 
 WiFiClient client;
@@ -50,29 +54,32 @@ unsigned long lastTime;
 bool sleepTimerEnabled;
 long sleepTimer;
 
-const Answer correctAnswers[] = {
-    {"01_01", 'A'},
-    {"01_02", 'B'},
-    {"01_03", 'C'},
-    {"01_04", 'D'},
-    {"02_01", 'A'},
-    {"02_02", 'B'},
-    {"02_03", 'C'},
-    {"02_04", 'D'},
-    {"03_01", 'A'},
-    {"03_02", 'B'},
-    {"03_03", 'C'},
-    {"03_04", 'D'},
-    {"04_01", 'A'},
-    {"04_02", 'B'},
-    {"04_03", 'C'},
-    {"04_04", 'D'}};
+const Question correctAnswers[] = {
+    {"01_01", "A"},
+    {"01_02", "B"},
+    {"01_03", "C"},
+    {"01_04", "D"},
+    {"02_01", "A"},
+    {"02_02", "B"},
+    {"02_03", "C"},
+    {"02_04", "D"},
+    {"03_01", "A"},
+    {"03_02", "B"},
+    {"03_03", "C"},
+    {"03_04", "D"},
+    {"04_01", "A"},
+    {"04_02", "B"},
+    {"04_03", "C"},
+    {"04_04", "D"}};
 
-char answer(String id) {
-    for(const Answer &answer : correctAnswers) {
-        if(answer.id.equals(id)) return answer.letter;
+String answer(String id)
+{
+    for (const Question &answer : correctAnswers)
+    {
+        if (answer.id.equals(id))
+            return answer.answer;
     }
-    return ' ';
+    return "";
 }
 
 void setupWiFi()
@@ -140,14 +147,14 @@ void updateScoreLEDs()
     }
 }
 
-void updateEndTimer()
+void updateSleepTimer()
 {
     if (sleepTimerEnabled)
     {
         unsigned long time = millis();
-        sleepTimer -= millis() - lastTime;
-        lastTime = millis();
-        if (endTime <= 0)
+        sleepTimer -= time - lastTime;
+        lastTime = time;
+        if (sleepTimer <= 0)
         {
             page = Page::INDEX;
             scoreMaster = 0;
@@ -160,14 +167,21 @@ void updateEndTimer()
     }
 }
 
+void startSleepTimer()
+{
+    lastTime = millis();
+    sleepTimerEnabled = true;
+}
+
 void setup()
 {
+    Serial.begin(7200);
+    Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
     pinMode(LED_CORRECT, OUTPUT);
     pinMode(LED_WRONG, OUTPUT);
     pinMode(LED_SCORE_1, OUTPUT);
     pinMode(LED_SCORE_2, OUTPUT);
     pinMode(LED_SCORE_3, OUTPUT);
-    Serial.begin(7200);
     setupWiFi();
     sleepTimerEnabled = false;
     sleepTimer = endTime;
@@ -186,6 +200,12 @@ void loop()
         Serial.println(serial);
     }
 
+    /*if (Serial2.available())
+    {
+        serial = Serial2.readString();
+        Serial.println(serial);
+    }*/
+
     client = server.available();
 
     if (client)
@@ -195,10 +215,19 @@ void loop()
             if (client.available())
             {
                 String header = client.readString();
-                //Serial.println(header);
                 if (header.endsWith("\n"))
                 {
-                    if (header.startsWith(ROUTE_INDEX_JS))
+                    if (header.startsWith(ROUTE_QUESTION_ARRAY))
+                    {
+                        respond(questionArray, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_EXPLANATION_ARRAY))
+                    {
+                        respond(explanationArray, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_INDEX_JS))
                     {
                         validation = randomKey(8);
                         key = randomKey(4);
@@ -220,6 +249,7 @@ void loop()
                     {
                         validation = randomKey(8);
                         String script = String(masterSolutionJS);
+                        script.replace("$ID", question);
                         script.replace("$VALIDATION", validation);
                         respond(script, "application/javascript");
                         break;
@@ -231,14 +261,18 @@ void loop()
                             respond(validation, "text/plain");
                             page = Page::QUESTIONS;
                             Serial.println("?valid=true");
+                            Serial2.println("?valid=true");
                             serial = "";
                         }
                         else if (!serial.isEmpty())
                         {
                             respond("", "text/plain");
                             Serial.println("?valid=false");
+                            Serial2.println("?valid=false");
+                            serial = "";
                         }
-                        else {
+                        else
+                        {
                             respond("", "text/plain");
                         }
                         break;
@@ -249,8 +283,9 @@ void loop()
                         respond(validation, "text/plain");
                         page = Page::SOLUTION;
                         String selectedQuestion = header.substring(index, index + 15);
-                        question = selectedQuestion.substring(11, 15);
+                        question = selectedQuestion.substring(10, 15);
                         Serial.println(selectedQuestion);
+                        Serial2.println(selectedQuestion);
                         serial = "";
                         digitalWrite(LED_CORRECT, LOW);
                         digitalWrite(LED_WRONG, LOW);
@@ -262,27 +297,28 @@ void loop()
                         {
                             int index = serial.length();
                             respond(validation, "text/plain");
-                            String selectedAnswer = serial.substring(index, index + 1);
-                            // Überprüfung der Fragen
-                            if (selectedAnswer[0] == answer(question))
+                            String selectedAnswer = serial.substring(index - 1, index);
+                            String correctAnswer = answer(question);
+                            if (selectedAnswer.equals(correctAnswer))
                             {
-                                Serial.println("?correct=true");
                                 digitalWrite(LED_WRONG, HIGH);
                                 scorePlayer++;
                             }
                             else
                             {
-                                Serial.println("?correct=false");
                                 digitalWrite(LED_CORRECT, HIGH);
                                 scoreMaster++;
                             }
+                            Serial.println("?correct=" + correctAnswer);
+                            Serial2.println("?correct=" + correctAnswer);
                             serial = "";
                             if (scoreMaster == 3 || scorePlayer == 3)
                                 page = Page::ENDSCREEN;
                             else
                                 page = Page::QUESTIONS;
                         }
-                        else {
+                        else
+                        {
                             respond("", "text/plain");
                         }
                         break;
@@ -303,7 +339,7 @@ void loop()
                         {
                             respond(masterVictory);
                         }
-                        sleepTimerEnabled = true;
+                        startSleepTimer();
                     }
                     else if (page == Page::SOLUTION)
                     {
@@ -327,8 +363,8 @@ void loop()
         }
 
         client.stop();
-
-        updateScoreLEDs();
-        updateEndTimer();
     }
+
+    updateScoreLEDs();
+    updateSleepTimer();
 }
