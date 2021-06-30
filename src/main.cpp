@@ -2,6 +2,7 @@
 #include <SPIFFS.h>
 #include <WiFi.h>
 #include <Master.h>
+#include <Style.h>
 
 #define RXD 16
 #define TXD 17
@@ -47,6 +48,7 @@ WiFiServer server(80);
 
 Page page;
 String key, validation, serial, question;
+bool lockQuestion;
 
 byte scoreMaster, scorePlayer;
 
@@ -188,6 +190,7 @@ void setup()
     page = Page::INDEX;
     scoreMaster = 0;
     scorePlayer = 0;
+    lockQuestion = false;
     updateScoreLEDs();
     Serial.println("Setup done.");
 }
@@ -279,17 +282,21 @@ void loop()
                     }
                     else if (header.startsWith(ROUTE_CHOOSE_QUESTION))
                     {
-                        int index = strlen(ROUTE_CHOOSE_QUESTION);
-                        respond(validation, "text/plain");
-                        page = Page::SOLUTION;
-                        String selectedQuestion = header.substring(index, index + 15);
-                        question = selectedQuestion.substring(10, 15);
-                        Serial.println(selectedQuestion);
-                        Serial2.println(selectedQuestion);
-                        serial = "";
-                        digitalWrite(LED_CORRECT, LOW);
-                        digitalWrite(LED_WRONG, LOW);
-                        break;
+                        if (!lockQuestion)
+                        {
+                            lockQuestion = true;
+                            int index = strlen(ROUTE_CHOOSE_QUESTION);
+                            respond(validation, "text/plain");
+                            page = Page::SOLUTION;
+                            String selectedQuestion = header.substring(index, index + 15);
+                            question = selectedQuestion.substring(10, 15);
+                            Serial.println(selectedQuestion);
+                            Serial2.println(selectedQuestion);
+                            serial = "";
+                            digitalWrite(LED_CORRECT, LOW);
+                            digitalWrite(LED_WRONG, LOW);
+                            break;
+                        }
                     }
                     else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
                     {
@@ -343,6 +350,7 @@ void loop()
                     }
                     else if (page == Page::SOLUTION)
                     {
+                        lockQuestion = false;
                         respond(masterSolution);
                     }
                     else if (page == Page::QUESTIONS)
