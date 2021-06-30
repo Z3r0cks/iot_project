@@ -293,7 +293,7 @@ void loop()
                     }
                     else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
                     {
-                        if (serial.startsWith("?selectedAnswer="))
+                        if (serial.startsWith("?answer="))
                         {
                             int index = serial.length();
                             respond(validation, "text/plain");
