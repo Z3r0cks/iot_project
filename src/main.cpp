@@ -254,17 +254,17 @@ void setup()
 
 void loop()
 {
-    if (Serial.available())
+    /*if (Serial.available())
     {
         serial = Serial.readString();
         Serial.println(serial);
-    }
+    }*/
 
-    /*if (Serial2.available())
+    if (Serial2.available())
     {
         serial = Serial2.readString();
         Serial.println(serial);
-    }*/
+    }
 
     client = server.available();
 
