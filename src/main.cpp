@@ -8,8 +8,8 @@
 // PIN LAYOUT
 #define RXD 16
 #define TXD 17
-#define LED_CORRECT 22
-#define LED_WRONG 23
+#define LED_CORRECT 23
+#define LED_WRONG 22
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
 #define LED_SCORE_3 27
