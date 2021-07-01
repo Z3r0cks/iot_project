@@ -14,11 +14,11 @@ const char masterSolution[] = R"=====(
 )=====";
 
 const char masterVictory[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3 class="header siegHeader">Sieg </h3><p>Das Quiz geht in 10 Sekunden in den SleepModus</p></div></div>
+ <div class="wrapper"><div class="headerWrapper"><h3 class="header siegHeader">Sieg </h3><p>Das Quiz beendet sich in 10 Sekunde, du kansch weggehe</p></div></div>
 )=====";
 
 const char masterDefeat[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3 class="header">Niederlage</h3></div></div>
+  <div class="wrapper"><div class="headerWrapper"><h3 class="header siegHeader">Leider verloren</h3><p>Das Quiz beendet sich in 10 Sekunde, du kansch weggehe</p></div></div>
 )=====";
 
 const char masterError[] = R"=====(
