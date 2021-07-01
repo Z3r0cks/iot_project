@@ -25,7 +25,6 @@
 #define ROUTE_VALIDATE_KEY "GET /validate-key"
 #define ROUTE_CHOOSE_QUESTION "GET /choose-question"
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
-#define ROUTE_DEEP_SLEEP "GET /deep-sleep"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
 // DURATIONS
@@ -233,9 +232,17 @@ void updateSleepTimer()
         {
             resetLogic();
             Serial.println("Going to sleep.");
+            Serial2.println("?sleep=true");
             esp_deep_sleep_start();
         }
     }
+}
+
+void printSleepTimer()
+{
+    Serial.print("Set sleep timer to ");
+    Serial.print(sleepTimer / 1000);
+    Serial.println(" seconds.");
 }
 
 void startSleepTimer(long timeout)
@@ -243,24 +250,12 @@ void startSleepTimer(long timeout)
     sleepTimer = timeout;
     lastTime = millis();
     sleepTimerEnabled = true;
+    printSleepTimer();
 }
 
 void startSleepTimer()
 {
     startSleepTimer(RESET_TIME);
-}
-
-// CALLBACK
-void callback()
-{
-    // Do Nothing
-}
-
-//PRINTERS
-void printSleepTimer()
-{
-    Serial.print(sleepTimer / 1000);
-    Serial.println(" seconds until deep sleep.");
 }
 
 // SETUP
@@ -291,14 +286,13 @@ void setup()
     updateScoreLEDs();
 
     // SETUP DEEP SLEEP
-    touchAttachInterrupt(TOUCH_PIN, callback, TOUCH_THRESHOLD);
+    touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
     esp_sleep_enable_touchpad_wakeup();
 
     Serial.println("Master setup done.");
     Serial2.println("?reset=true");
 
     startSleepTimer();
-    printSleepTimer();
 }
 
 // MAIN LOOP
@@ -322,6 +316,11 @@ void loop()
 
     if (serial.startsWith("?reset=true"))
         resetLogic();
+    else if (serial.startsWith("?sleep=true"))
+    {
+        resetLogic();
+        esp_deep_sleep_start();
+    }
 
     client = server.available();
 
