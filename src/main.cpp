@@ -12,7 +12,7 @@
 #define LED_WRONG 22
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
-#define LED_SCORE_3 27
+#define LED_SCORE_3 14 //old 27
 #define TOUCH_PIN 2
 
 // TOUCH
