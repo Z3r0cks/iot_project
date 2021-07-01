@@ -27,7 +27,7 @@
 #define ROUTE_AWAIT_QUESTION "GET /await-question"
 #define ROUTE_SUBMIT_ANSWER "GET /submit-answer"
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
-#define ROUTE_QUIT_GAME "GET /quit-game"
+#define ROUTE_DEEP_SLEEP "GET /deep-sleep"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
 // DURATIONS
@@ -303,8 +303,8 @@ void setup()
 // MAIN LOOP
 void loop()
 {
-    // if (loopCount % 10000 == 0)
-        // printSleepTimer();
+    /*if (loopCount % 10000 == 0)
+        printSleepTimer();*/
 
     /*if (Serial.available())
     {
