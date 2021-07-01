@@ -24,7 +24,8 @@
 #define ROUTE_QUIT_GAME "GET /quit-game"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
-// SLEEP
+// DURATIONS
+#define resetTime 300000
 #define endTime 10000
 
 // PAGES
@@ -50,7 +51,11 @@ bool lockQuestion;
 int scoreMaster, scorePlayer;
 
 // TIMER VARS
-unsigned long lastTime;
+unsigned long lastTime0;
+bool resetTimerEnabled;
+long resetTimer;
+
+unsigned long lastTime1;
 bool sleepTimerEnabled;
 long sleepTimer;
 
@@ -201,33 +206,6 @@ void updateScoreLEDs()
     }
 }
 
-// SLEEP TIMER
-void updateSleepTimer()
-{
-    if (sleepTimerEnabled)
-    {
-        unsigned long time = millis();
-        sleepTimer -= time - lastTime;
-        lastTime = time;
-        if (sleepTimer <= 0)
-        {
-            page = Page::INDEX;
-            scoreMaster = 0;
-            scorePlayer = 0;
-            digitalWrite(LED_CORRECT, LOW);
-            digitalWrite(LED_WRONG, LOW);
-            sleepTimerEnabled = false;
-            sleepTimer = endTime;
-        }
-    }
-}
-
-void startSleepTimer()
-{
-    lastTime = millis();
-    sleepTimerEnabled = true;
-}
-
 // GAME LOGIC
 void resetLogic()
 {
@@ -237,6 +215,51 @@ void resetLogic()
     scoreMaster = 0;
     scorePlayer = 0;
     lockQuestion = false;
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
+}
+
+// RESET TIMER
+void updateResetTimer()
+{
+    if (resetTimerEnabled)
+    {
+        unsigned long time = millis();
+        resetTimer -= time - lastTime0;
+        lastTime0 = time;
+        if (resetTimer <= 0)
+            resetLogic();
+    }
+}
+
+// SLEEP TIMER
+void updateSleepTimer()
+{
+    if (sleepTimerEnabled)
+    {
+        unsigned long time = millis();
+        sleepTimer -= time - lastTime1;
+        lastTime1 = time;
+        if (sleepTimer <= 0)
+            resetLogic();
+    }
+}
+
+void startResetTimer()
+{
+    lastTime0 = millis();
+    resetTimerEnabled = true;
+}
+
+void stopResetTimer()
+{
+    resetTimerEnabled = false;
+}
+
+void startSleepTimer()
+{
+    lastTime1 = millis();
+    sleepTimerEnabled = true;
 }
 
 // SETUP
@@ -282,6 +305,7 @@ void loop()
     {
         serial = Serial2.readString();
         Serial.println(serial);
+        startResetTimer();
     }
 
     if (serial.startsWith("?reset=true"))
@@ -295,6 +319,7 @@ void loop()
         {
             if (client.available())
             {
+                startResetTimer();
                 String header = client.readString();
                 if (header.endsWith("\n"))
                 {
@@ -419,6 +444,7 @@ void loop()
                         {
                             respond(getPage(masterVictory, "Quiz gewonnen", "victoryBody", ""));
                         }
+                        stopResetTimer();
                         startSleepTimer();
                     }
                     else if (page == Page::SOLUTION)
@@ -436,7 +462,7 @@ void loop()
                     }
                     else
                     {
-                        error(getPage(masterError, "Fehler", "errorBody" ,""));
+                        error(getPage(masterError, "Fehler", "errorBody", ""));
                     }
                     break;
                 }
@@ -447,5 +473,6 @@ void loop()
     }
 
     updateScoreLEDs();
+    updateResetTimer();
     updateSleepTimer();
 }
