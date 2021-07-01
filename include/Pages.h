@@ -1,3 +1,35 @@
+// $TITLE, $SCRIPT, $BODY
+const char playerPage[] = R"=====(<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="style.css">$SCRIPT</head><body>$BODY</body></html>)=====";
+
+const char playerIndex[] = R"=====(
+<div class="wrapper">
+    <div class="headerWrapper indexheaderWrapper">
+        <p class="indexHeader">Willkommen Player!</p>
+        <p>Gib den Code des <br> Gamemasters ein </p>
+    </div>
+    <input type="text" name="gamecode-input" id="gamecode-input" placeholder="code...">
+    <button class="btn" id="enter-game">Spiel beitreten</button>
+</div>
+)=====";
+
+const char playerSolution[] = R"=====(
+<div class="wrapper">
+    <div class="headerWrapper solutionHeaderWrapper">
+        <p class="header"></p>
+    </div>
+    <div class="contentWrapper">
+        <p id="feedback"></p>
+    </div>
+    <div class="contentWrapper">
+        <p id="solution"></p>
+    </div>
+    <div class="contentWrapper">
+        <p id="wait-info"></p>
+    </div>
+</div>
+)=====";
+
+const char playerQuestion[] = R"=====(
 <div class="wrapper">
     <div class="headerWrapper questionHeaderWrapper">
         <p class="header questionHeader" id="question">Was macht den Schwarzwald so
@@ -35,3 +67,17 @@
     </div>
     <button id="login-answer">Antwort einloggen</button>
 </div>
+)=====";
+
+const char playerVictory[] = R"=====(
+<h3>Du hast gewonnen!</h3>
+)=====";
+
+const char playerDefeat[] = R"=====(
+<h3>Du hast verloren!</h3>
+)=====";
+
+const char playerError[] = R"=====(
+<h3>Ups!</h3>
+<p>Etwas ist schief gelaufen.</p>
+)=====";

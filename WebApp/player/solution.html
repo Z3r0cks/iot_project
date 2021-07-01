@@ -1,111 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Richtige Antwort</title>
-</head>
-
-<body>
-    <div class="wrapper">
-        <div class="headerWrapper solutionHeaderWrapper">
-            <p class="header">Auflösung</p>
-        </div>
-        <div class="contentWrapper">
-            <p id="feedback">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Ullam alias fuga sit molestiae,
-                eum
-                quidem molestias quo veniam rem impedit veritatis repellendus eligendi consectetur cumque earum. Impedit
-                optio maxime debitis!</p>
-        </div>
-        <div class="contentWrapper">
-            <p id="solution">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Ullam alias fuga sit molestiae,
-                eum
-                quidem molestias quo veniam rem impedit veritatis repellendus eligendi consectetur cumque earum. Impedit
-                optio maxime debitis!</p>
-        </div>
-        <div class="contentWrapper">
-            <p id="wait-info">Der Gamemaster wählt eine Fage aus. Bitte Warten</p>
-        </div>
+<div class="wrapper">
+    <div class="headerWrapper solutionHeaderWrapper">
+        <p class="header"></p>
     </div>
-</body>
-
-<script>
-    // const correctAnswerGlobal = "$correctAnswer";
-    // const selectedAnswerGlobal = "$selectedAnswer";
-
-    var explenationSet;
-
-    if (!explenationSet) {
-        const interval = setInterval(function () {
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function () {
-                if (this.readyState == 4 && this.status == 200) {
-                    console.log(this.responseText);
-                    if (this.responseText.trim() != "") {
-                        if (this.responseText.indexOf("RELOAD") < 0) {
-                            const json = JSON.parse(this.responseText.trim());
-
-                            if (json.selectedAnswer == json.correctAnswer) {
-                                document.getElementById('feedback').innerHTML = 'Deine Antwort ist richtig';
-                                ajaxCall("/?result=right");
-                                console.log('RICHTIG');
-                            } else {
-                                document.getElementById('feedback').innerHTML =
-                                    'Deine Antwort ist falsch. Die Richtige Antwort ist: ';
-                                ajaxCall("/?result=wrong");
-                                console.log('FALSCH');
-                            }
-                            document.getElementById('solution').innerHTML = json.correctAnswer + ': ' +
-                                explanations['$QUESTION'];
-
-                            document.selectedAnswer('');
-                        } else {
-                            console.log("reload response");
-                            ajaxCall("/newQuestion");
-                            window.location.reload();
-                        }
-                    }
-                }
-            }
-
-            xhttp.open("GET", "command", true);
-            xhttp.send();
-        }, 1000);
-
-        function ajaxCall(link) {
-            console.log(link);
-            var xmlhttp = new XMLHttpRequest();
-            xmlhttp.open("GET", link, true);
-            xmlhttp.send();
-        }
-    }
-
-
-
-    const explanations = {
-        "01_01": "explanation",
-        "01_02": "explanation2",
-        "01_03": "explanation",
-        "01_04": "explanation",
-        "02_01": "explanation",
-        "02_02": "explanation",
-        "02_03": "explanation",
-        "02_04": "explanation",
-        "03_01": "explanation",
-        "03_02": "explanation",
-        "03_03": "explanation",
-        "03_04": "explanation",
-        "04_01": "explanation",
-        "04_02": "explanation",
-        "04_03": "explanation",
-        "04_04": "explanation"
-    }
-
-    // document.getElementById('solution').innerHTML = explanations["01_02"];
-</script>
-
-
-</html>
+    <div class="contentWrapper">
+        <p id="feedback"></p>
+    </div>
+    <div class="contentWrapper">
+        <p id="solution"></p>
+    </div>
+    <div class="contentWrapper">
+        <p id="wait-info">
+            Der Gamemaster wählt eine Fage aus. Bitte warten.
+        </p>
+    </div>
+</div>
