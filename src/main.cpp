@@ -1,10 +1,11 @@
-#include "Arduino.h"
+#include <Arduino.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
 #include <Pages.h>
 #include <Scripts.h>
 #include <Styles.h>
 
+// PIN LAYOUT
 #define RXD 16
 #define TXD 17
 #define LED_CORRECT 19
@@ -13,18 +14,20 @@
 #define LED_SCORE_2 26
 #define LED_SCORE_3 27
 
+// ROUTES
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_QUESTIONS_JS "GET /questions.js"
 #define ROUTE_SOLUTION_JS "GET /solution.js"
-#define ROUTE_ENDSCREEN_JS "GET /endscreen.js"
 #define ROUTE_VALIDATE_KEY "GET /validate-key"
 #define ROUTE_CHOOSE_QUESTION "GET /choose-question"
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
-#define ROUTE_FINISH_GAME "GET /finish-game"
+#define ROUTE_QUIT_GAME "GET /quit-game"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
+// SLEEP
 #define endTime 10000
 
+// PAGES
 enum Page
 {
     INDEX,
@@ -33,22 +36,25 @@ enum Page
     ENDSCREEN
 };
 
+// WIFI SETTINGS
 const char *ssid = "Nature Quiz (Game Master)";
 const char *password = NULL;
 
 WiFiClient client;
 WiFiServer server(80);
 
+// GLOBAL VARS
 Page page;
 String key, validation, serial, question;
 bool lockQuestion;
-
 int scoreMaster, scorePlayer;
 
+// TIMER VARS
 unsigned long lastTime;
 bool sleepTimerEnabled;
 long sleepTimer;
 
+// QUESTIONS
 struct Question
 {
     String id;
@@ -69,22 +75,18 @@ struct Question
 };
 
 const Question questions[] = {
-    Question("01_01", "1", "Warum ist die Banane krumm?", "Weil Baum.", "Weil Sonne.", "Weil keine Ahnung.", "Weil so.", "Die Banane wächst zur Sonne. Deshalb.", "B"),
-    Question("01_02", "1", "01_02?", "A", "B", "C", "D", "Erklärung hier einfügen", "A"),
-    Question("01_03", "1", "01_03?", "A", "B", "C", "D", "Erklärung hier einfügen", "D"),
-    Question("01_04", "1", "01_04?", "A", "B", "C", "D", "Erklärung hier einfügen", "C"),
-    Question("02_01", "2", "02_01?", "A", "B", "C", "D", "Erklärung hier einfügen", "D"),
-    Question("02_02", "2", "02_02?", "A", "B", "C", "D", "Erklärung hier einfügen", "A"),
-    Question("02_03", "2", "02_03?", "A", "B", "C", "D", "Erklärung hier einfügen", "B"),
-    Question("02_04", "2", "02_04?", "A", "B", "C", "D", "Erklärung hier einfügen", "D"),
-    Question("03_01", "3", "03_01?", "A", "B", "C", "D", "Erklärung hier einfügen", "D"),
-    Question("03_02", "3", "03_02?", "A", "B", "C", "D", "Erklärung hier einfügen", "C"),
-    Question("03_03", "3", "03_03?", "A", "B", "C", "D", "Erklärung hier einfügen", "B"),
-    Question("03_04", "3", "03_04?", "A", "B", "C", "D", "Erklärung hier einfügen", "A"),
-    Question("04_01", "4", "04_01?", "A", "B", "C", "D", "Erklärung hier einfügen", "C"),
-    Question("04_02", "4", "04_02?", "A", "B", "C", "D", "Erklärung hier einfügen", "A"),
-    Question("04_03", "4", "04_03?", "A", "B", "C", "D", "Erklärung hier einfügen", "D"),
-    Question("04_04", "4", "04_04?", "A", "B", "C", "D", "Erklärung hier einfügen", "B")};
+    Question("01_01", "1", "Warum ist der Schwarzwald so Bienenfreundlich?", "Wegen der Höhenlage", "Wegen dem vielen Schnee", "Es wächst viel Löwenzahn in der Gegend", "Wegen der guten Luft", "Löwenzahn besitzen nicht nur eine Blüte sondern viele. Bienen werden davon angelockt.", "C"),
+    Question("01_02", "1", "Wieso verlieren Tannen im Winter nicht ihre Nadeln?", "Weil Tannen besser Wärme speichern können", "Weil die Nadeln eng beieinander liegen und sich dadurch gegenseitig wärmen", "Durch eine Art Salz, was als Frostschutzmittel dient", "Durch eine Art Zucker, was als Frostschutzmittel dient", "Tannen speichen außerdem weniger Wasser und die Nadeln sind dicker. Bei Laubblätter haben kaum festes Gewebe und würden im Winter deshalb erfrieren.", "D"),
+    Question("02_01", "1", "Von was ernähren sich Rehe von März bis April?", "Bärlappgewächse ", "Beeren", "Gräser und Knospen", "Zweikeimblättrige Kräute", "Gräser und Knospen von Mitte März bis Ende April. Laubtriebe und einkeimblättrige Kräuter von Anfang Mai bis Ende Juni. Zweikeimblättrige Kräuter und Laubtriebe von Mitte Juni bis Mitte Oktober. In dieser Zeit ist die Zahl der als Äsungspflanzen generell in Frage kommenden Arten am größten und umfasst rund 134 verschiedene Arten. Schachtelhalme, Farne und Bärlappgewächse sowie Knospen und Brombeeren von Mitte Oktober bis Mitte Dezember. Gräser, Knospen und Brombeeren von Anfang Januar bis Mitte März.", "C"),
+    Question("03_01", "1", "Aus was entstand die Hochschule Furtwangen?", "Uhrmacherschule", "Baumschule", "Katholisches Kloster", "Volkshochschulkurs", "1850 wurde die Großherzogliche Badische Uhrmacherschule Furtwangen von Robert Gerwig gegründet. 1947 wurde diese zur Staatlichen Ingenieurschule Furtwangen/Schwarzwald. 1971 wurde diese zur Fachhochschule Furtwangen FHF. 1997 wurde sie zur Hochschule für Technik und Wissenschaft umfirmiert", "A"),
+    Question("03_02", "2", "Auf welcher Höhe befindest du dich gerade", "~ 90m ü.n.N.", "~ 580m ü.n.N.", "~ 1100m ü.n.N.", "~ 2370m ü.n.N.", "m ü.n.N steht für Meter über normal Null", "C"),
+    Question("03_03", "2", "Welche Sage gibt es über Studierende der Hochschule Furtwangen?", "Wenn mindestens drei mal in der Woche in der Mensa isst, besteht man seine Prüfungen", "Wenn Studierende während ihres Studiums das Uhrenmuseum besuchen, schaffen sie ihren Abschluss nicht.", "Studierende die im Wohnheim GHB wohnen, werden von den Professor:inn:en bevorzugt.", "Die Statue an der Brücke vor dem B-Bau der Hochschule, soll die erste weibliche Absolventin darstellen.", "Schon im ersten Semester wird den Studierenden beigebracht, dass sie erst nach ihrem bestandenen Abschluss, das Uhrenmuseum betreten sollten", "B"),
+    Question("03_04", "2", "Wie viele Höhenmeter trennen den niedrigsten vom höchsten Punkt der Stadt Furtwangen?", "500m", "600m", "400m", "300m", "50m (Breg) - 1150m (Brend)", "D"),
+    Question("04_01", "2", "Welche Berge kann man neben dem Feldberg und dem Kandel vom Brendturm aus sehen?", "Schauinsland", "Blickinstal", "Sehdasgrün", "Spührdasblau", "Der Brend ist mit 1148 m der höchste Berg der Stadt Furtwangen, auf dessen Spitze der Brendturm steht. Von seinem Aussichtspunkt aus  17 m Höhe, kann man den Schauinsland sehen. Dieser ist 1284 m hoch und gleichzeitig der Hausberg der Stadt Freiburg. Bei schönem Wetter kann man ringsherum in die schönen Täler schauen.", "A"),
+    Question("04_02", "3", "Welche Eselsbrücke gibt es, um sie die Zuflüsse (Brigach und Breg) der Donau zu merken?", "Brigach und Breg bringen die Donau zu Weg", "Brigach von rechts, Breg von links daraus macht die Donau springs", "Zwei Mal B, das tut der Donau nicht weh", "Durch Brigach und Bregs Mündung, kommt die Donau zur Verkündung", "Länge der Flüsse und wo sie münden.", "A"),
+    Question("04_03", "3", "Wie heißt der Größte Berg im Schwarzwald", "Mount Everest", "Zugspitze", "Feldberg", "Brend", "Der Feldberg ist der höchste Berg im Schwarzwald. Er ist 1493 Meter hoch. Mit der Seilbahn kann man fast bis zum Gipfel fahren.", "C"),
+    Question("04_04", "3", "Wieso wurde die Linachtalsperre ursprünglich gebaut?", "Zum Schutz vor Überschwemmungen nach der Schneeschmelze", "Zur Stromgewinnung", "Damit ein Badesee entsteht", "Damit eine Örtliche Fischzucht entstehen kann", "Die Linachtalsperre wurde von 1922-1925 gebaut. bis 1969 wurde sie, wie ursprünglich geplant, zur örtlichen Stromgewinnung genutzt. Aus Sicherheitsgründen wurde 1988 das Wasser abgelassen. Seit ihrer Renovierung 2007 staut sie wieder das Wasser der Linach.", "B"),
+};
 
 String questionToJSON(Question quest)
 {
@@ -101,6 +103,14 @@ String questionToJSON(Question quest)
     return json;
 }
 
+String questionsToJSON()
+{
+    String json = "{";
+    for (const Question &quest : questions)
+        json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
+    return json + "}";
+}
+
 String getAnswer(String id)
 {
     for (const Question &quest : questions)
@@ -111,26 +121,7 @@ String getAnswer(String id)
     return "";
 }
 
-String questionsToJSON()
-{
-    String json = "{";
-    for (const Question &quest : questions)
-        json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
-    return json + "}";
-}
-
-void setupWiFi()
-{
-    Serial.print("Setting up Acces Point");
-    WiFi.softAP(ssid, password);
-
-    IPAddress ip = WiFi.softAPIP();
-    Serial.print(" at ");
-    Serial.println(ip);
-
-    server.begin();
-}
-
+// HTTP RESPONSES
 void respond(String data, String contentType)
 {
     client.println("HTTP/1.1 200 OK");
@@ -147,6 +138,25 @@ void respond(String html)
     respond(html, "text/html");
 }
 
+void error(String html)
+{
+    client.println("HTTP/1.1 404 Not Found");
+    client.println("Content-type: text/html");
+    client.println("Connection: close");
+    client.println();
+    if (!html.isEmpty())
+        client.println(html);
+}
+
+// RANDOM KEY GENERATOR
+unsigned long randomKey(int positions)
+{
+    unsigned long upper = pow(10, positions);
+    unsigned long lower = pow(10, positions - 1);
+    return (millis() % (upper - lower)) + lower;
+}
+
+// GET PAGE
 String getPage(String raw, String title, String script)
 {
     String html = String(masterPage);
@@ -161,23 +171,7 @@ String getPage(String raw, String title, String script)
     return html;
 }
 
-void error(String html)
-{
-    client.println("HTTP/1.1 404 Not Found");
-    client.println("Content-type: text/html");
-    client.println("Connection: close");
-    client.println();
-    if (!html.isEmpty())
-        client.println(html);
-}
-
-unsigned long randomKey(int positions)
-{
-    unsigned long upper = pow(10, positions);
-    unsigned long lower = pow(10, positions - 1);
-    return (millis() % (upper - lower)) + lower;
-}
-
+// SCORE LEDS
 void updateScoreLEDs()
 {
     if (scoreMaster == 0)
@@ -206,6 +200,7 @@ void updateScoreLEDs()
     }
 }
 
+// SLEEP TIMER
 void updateSleepTimer()
 {
     if (sleepTimerEnabled)
@@ -232,7 +227,9 @@ void startSleepTimer()
     sleepTimerEnabled = true;
 }
 
-void resetLogic() {    
+// GAME LOGIC
+void resetLogic()
+{
     sleepTimerEnabled = false;
     sleepTimer = endTime;
     page = Page::INDEX;
@@ -241,22 +238,37 @@ void resetLogic() {
     lockQuestion = false;
 }
 
+// SETUP
 void setup()
 {
+    // SETUP SERIAL
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
+
+    // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
     pinMode(LED_WRONG, OUTPUT);
     pinMode(LED_SCORE_1, OUTPUT);
     pinMode(LED_SCORE_2, OUTPUT);
     pinMode(LED_SCORE_3, OUTPUT);
-    setupWiFi();
+
+    // SETUP WIFI
+    WiFi.softAP(ssid, password);
+    IPAddress ip = WiFi.softAPIP();
+    server.begin();
+    Serial.print("Server running at ");
+    Serial.print(ip);
+    Serial.println(".");
+
+    // SETUP LOGIC
     resetLogic();
     updateScoreLEDs();
+
     Serial.println("Master setup done.");
     Serial2.println("?reset=true");
 }
 
+// MAIN LOOP
 void loop()
 {
     /*if (Serial.available())
@@ -271,7 +283,7 @@ void loop()
         Serial.println(serial);
     }
 
-    if(serial.startsWith("?reset=true"))
+    if (serial.startsWith("?reset=true"))
         resetLogic();
 
     client = server.available();
@@ -362,18 +374,21 @@ void loop()
                             respond(validation, "text/plain");
                             String selectedAnswer = serial.substring(8, 9);
                             String correctAnswer = getAnswer(question);
+                            String correct = "";
                             if (selectedAnswer.equals(correctAnswer))
                             {
                                 digitalWrite(LED_WRONG, HIGH);
                                 scorePlayer++;
+                                correct = "true";
                             }
                             else
                             {
                                 digitalWrite(LED_CORRECT, HIGH);
                                 scoreMaster++;
+                                correct = "false";
                             }
-                            Serial.println("?correct=" + correctAnswer);
-                            Serial2.println("?correct=" + correctAnswer);
+                            Serial.println("?correct=" + correct);
+                            Serial2.println("?correct=" + correct);
                             serial = "";
                             if (scoreMaster == 3 || scorePlayer == 3)
                                 page = Page::ENDSCREEN;
@@ -392,26 +407,27 @@ void loop()
                         break;
                     }
 
+                    // PAGES
                     if (page == Page::ENDSCREEN)
                     {
                         if (scorePlayer == 3)
                         {
-                            respond(getPage(masterDefeat, "Niederlage", ""));
+                            respond(getPage(masterDefeat, "Quiz verloren", ""));
                         }
                         else
                         {
-                            respond(getPage(masterVictory, "Niederlage", ""));
+                            respond(getPage(masterVictory, "Quiz gewonnen", ""));
                         }
                         startSleepTimer();
                     }
                     else if (page == Page::SOLUTION)
                     {
                         lockQuestion = false;
-                        respond(getPage(masterSolution, "Auflösung", "solution.js"));
+                        respond(getPage(masterSolution, "Erklärung", "solution.js"));
                     }
                     else if (page == Page::QUESTIONS)
                     {
-                        respond(getPage(masterQuestions, "Fragenauswahl", "questions.js"));
+                        respond(getPage(masterQuestions, "Frage wählen", "questions.js"));
                     }
                     else if (page == Page::INDEX)
                     {
