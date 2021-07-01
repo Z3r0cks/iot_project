@@ -1,5 +1,5 @@
 // $TITLE, $SCRIPT, $BODY
-const char playerPage[] = R"=====(<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="style.css">$SCRIPT</head><body>$BODY</body></html>)=====";
+const char playerPage[] = R"=====(<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="style.css">$SCRIPT</head><body class="$CLASS">$BODY</body></html>)=====";
 
 const char playerIndex[] = R"=====(
  <div class="wrapper"><div class="headerWrapper indexheaderWrapper"><p class="indexHeader">Willkommen Player!</p><p>Gib den Code des <br>Gamemasters ein </p></div><input type="text" name="gamecode-input" id="gamecode-input" placeholder="code..."><button class="btn" id="enter-game">Spiel beitreten</button></div>
