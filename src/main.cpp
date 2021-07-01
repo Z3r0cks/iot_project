@@ -8,11 +8,15 @@
 // PIN LAYOUT
 #define RXD 16
 #define TXD 17
-#define LED_CORRECT 19
-#define LED_WRONG 18
-#define LED_SCORE_1 25
-#define LED_SCORE_2 26
+#define LED_CORRECT 22
+#define LED_WRONG 23
+#define LED_SCORE_1 33
+#define LED_SCORE_2 32
 #define LED_SCORE_3 27
+#define TOUCH_PIN 2
+
+// TOUCH
+#define TOUCH_THRESHOLD 40
 
 // ROUTES
 #define ROUTE_INDEX_JS "GET /index.js"
@@ -24,8 +28,9 @@
 #define ROUTE_QUIT_GAME "GET /quit-game"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
-// SLEEP
-#define endTime 10000
+// DURATIONS
+#define RESET_TIME 300000
+#define SLEEP_TIME 10000
 
 // PAGES
 enum Page
@@ -53,6 +58,7 @@ int scoreMaster, scorePlayer;
 unsigned long lastTime;
 bool sleepTimerEnabled;
 long sleepTimer;
+unsigned long loopCount;
 
 // QUESTIONS
 struct Question
@@ -157,7 +163,7 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String script)
+String getPage(String raw, String title, String bodyClass, String script)
 {
     String html = String(masterPage);
     html.replace("$TITLE", title);
@@ -167,6 +173,7 @@ String getPage(String raw, String title, String script)
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
+    page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
 }
@@ -200,6 +207,20 @@ void updateScoreLEDs()
     }
 }
 
+// GAME LOGIC
+void resetLogic()
+{
+    sleepTimerEnabled = false;
+    sleepTimer = RESET_TIME;
+    loopCount = 0;
+    page = Page::INDEX;
+    scoreMaster = 0;
+    scorePlayer = 0;
+    lockQuestion = false;
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
+}
+
 // SLEEP TIMER
 void updateSleepTimer()
 {
@@ -210,32 +231,36 @@ void updateSleepTimer()
         lastTime = time;
         if (sleepTimer <= 0)
         {
-            page = Page::INDEX;
-            scoreMaster = 0;
-            scorePlayer = 0;
-            digitalWrite(LED_CORRECT, LOW);
-            digitalWrite(LED_WRONG, LOW);
-            sleepTimerEnabled = false;
-            sleepTimer = endTime;
+            resetLogic();
+            Serial.println("Going to sleep.");
+            esp_deep_sleep_start();
         }
     }
 }
 
-void startSleepTimer()
+void startSleepTimer(long timeout)
 {
+    sleepTimer = timeout;
     lastTime = millis();
     sleepTimerEnabled = true;
 }
 
-// GAME LOGIC
-void resetLogic()
+void startSleepTimer()
 {
-    sleepTimerEnabled = false;
-    sleepTimer = endTime;
-    page = Page::INDEX;
-    scoreMaster = 0;
-    scorePlayer = 0;
-    lockQuestion = false;
+    startSleepTimer(RESET_TIME);
+}
+
+// CALLBACK
+void callback()
+{
+    // Do Nothing
+}
+
+//PRINTERS
+void printSleepTimer()
+{
+    Serial.print(sleepTimer / 1000);
+    Serial.println(" seconds until deep sleep.");
 }
 
 // SETUP
@@ -244,6 +269,7 @@ void setup()
     // SETUP SERIAL
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
+    delay(1000);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
@@ -264,13 +290,23 @@ void setup()
     resetLogic();
     updateScoreLEDs();
 
+    // SETUP DEEP SLEEP
+    touchAttachInterrupt(TOUCH_PIN, callback, TOUCH_THRESHOLD);
+    esp_sleep_enable_touchpad_wakeup();
+
     Serial.println("Master setup done.");
     Serial2.println("?reset=true");
+
+    startSleepTimer();
+    printSleepTimer();
 }
 
 // MAIN LOOP
 void loop()
 {
+    if (loopCount % 10000 == 0)
+        printSleepTimer();
+
     /*if (Serial.available())
     {
         serial = Serial.readString();
@@ -281,6 +317,7 @@ void loop()
     {
         serial = Serial2.readString();
         Serial.println(serial);
+        startSleepTimer();
     }
 
     if (serial.startsWith("?reset=true"))
@@ -294,6 +331,7 @@ void loop()
         {
             if (client.available())
             {
+                startSleepTimer();
                 String header = client.readString();
                 if (header.endsWith("\n"))
                 {
@@ -412,30 +450,30 @@ void loop()
                     {
                         if (scorePlayer == 3)
                         {
-                            respond(getPage(masterDefeat, "Quiz verloren", ""));
+                            respond(getPage(masterDefeat, "Quiz verloren", "defeatBody", ""));
                         }
                         else
                         {
-                            respond(getPage(masterVictory, "Quiz gewonnen", ""));
+                            respond(getPage(masterVictory, "Quiz gewonnen", "victoryBody", ""));
                         }
-                        startSleepTimer();
+                        startSleepTimer(SLEEP_TIME);
                     }
                     else if (page == Page::SOLUTION)
                     {
                         lockQuestion = false;
-                        respond(getPage(masterSolution, "Erklärung", "solution.js"));
+                        respond(getPage(masterSolution, "Erklärung", "solutionBody", "solution.js"));
                     }
                     else if (page == Page::QUESTIONS)
                     {
-                        respond(getPage(masterQuestions, "Frage wählen", "questions.js"));
+                        respond(getPage(masterQuestions, "Frage wählen", "questionsBody", "questions.js"));
                     }
                     else if (page == Page::INDEX)
                     {
-                        respond(getPage(masterIndex, "Code", "index.js"));
+                        respond(getPage(masterIndex, "Code", "indexBody", "index.js"));
                     }
                     else
                     {
-                        error(getPage(masterError, "Fehler", ""));
+                        error(getPage(masterError, "Fehler", "errorBody", ""));
                     }
                     break;
                 }
@@ -447,4 +485,7 @@ void loop()
 
     updateScoreLEDs();
     updateSleepTimer();
+
+    // UPDATE LOOP COUNT
+    loopCount++;
 }
