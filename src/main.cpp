@@ -25,7 +25,7 @@
 #define ROUTE_VALIDATE_KEY "GET /validate-key"
 #define ROUTE_CHOOSE_QUESTION "GET /choose-question"
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
-#define ROUTE_QUIT_GAME "GET /quit-game"
+#define ROUTE_DEEP_SLEEP "GET /deep-sleep"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
 // DURATIONS
@@ -260,7 +260,7 @@ void callback()
 void printSleepTimer()
 {
     Serial.print(sleepTimer / 1000);
-    // Serial.println(" seconds until deep sleep.");
+    Serial.println(" seconds until deep sleep.");
 }
 
 // SETUP
@@ -304,8 +304,8 @@ void setup()
 // MAIN LOOP
 void loop()
 {
-    // if (loopCount % 10000 == 0)
-    //     printSleepTimer();
+    /*if (loopCount % 10000 == 0)
+        printSleepTimer();*/
 
     /*if (Serial.available())
     {
