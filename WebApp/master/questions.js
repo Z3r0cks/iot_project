@@ -6,7 +6,6 @@ for (const key in questions) {
     div.id = key;
     
     div.innerHTML = quest.text;
-    div.appendChild(text);
     function clickHandler() {
         const xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {

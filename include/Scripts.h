@@ -16,7 +16,7 @@ const interval = setInterval(function () {
 )=====";
 
 const char masterQuestionsJS[] = R"=====(
-const questions=$QUESTIONS;for(const e in questions){const t=questions[e],n=document.createElement("div");function clickHandler(){const t=new XMLHttpRequest;t.onreadystatechange=function(){4==this.readyState&&200==this.status&&"$VALIDATION"==this.responseText.trim()&&(n.removeEventListener("click",clickHandler),window.location.reload())},t.open("GET","choose-question?question="+e,!0),t.send()}n.classList.add("question"),n.id=e,n.innerHTML=t.text,n.appendChild(text),n.addEventListener("click",clickHandler),document.querySelector("#cat"+questions[e].category).appendChild(n)}
+const questions=$QUESTIONS;for(const e in questions){const t=questions[e],n=document.createElement("div");function clickHandler(){const t=new XMLHttpRequest;t.onreadystatechange=function(){4==this.readyState&&200==this.status&&"$VALIDATION"==this.responseText.trim()&&(n.removeEventListener("click",clickHandler),window.location.reload())},t.open("GET","choose-question?question="+e,!0),t.send()}n.classList.add("question"),n.id=e,n.innerHTML=t.text,n.addEventListener("click",clickHandler),document.querySelector("#cat"+questions[e].category).appendChild(n)}
 )=====";
 
 const char masterSolutionJS[] = R"=====(

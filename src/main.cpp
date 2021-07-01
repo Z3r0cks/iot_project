@@ -260,7 +260,7 @@ void callback()
 void printSleepTimer()
 {
     Serial.print(sleepTimer / 1000);
-    Serial.println(" seconds until deep sleep.");
+    // Serial.println(" seconds until deep sleep.");
 }
 
 // SETUP
@@ -304,8 +304,8 @@ void setup()
 // MAIN LOOP
 void loop()
 {
-    if (loopCount % 10000 == 0)
-        printSleepTimer();
+    // if (loopCount % 10000 == 0)
+    //     printSleepTimer();
 
     /*if (Serial.available())
     {
