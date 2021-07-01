@@ -269,6 +269,7 @@ void setup()
     // SETUP SERIAL
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
+    delay(1000);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
