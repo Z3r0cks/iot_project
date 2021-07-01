@@ -238,19 +238,11 @@ void updateSleepTimer()
     }
 }
 
-void printSleepTimer()
-{
-    Serial.print("Set sleep timer to ");
-    Serial.print(sleepTimer / 1000);
-    Serial.println(" seconds.");
-}
-
 void startSleepTimer(long timeout)
 {
     sleepTimer = timeout;
     lastTime = millis();
     sleepTimerEnabled = true;
-    printSleepTimer();
 }
 
 void startSleepTimer()
@@ -298,9 +290,6 @@ void setup()
 // MAIN LOOP
 void loop()
 {
-    /*if (loopCount % 10000 == 0)
-        printSleepTimer();*/
-
     /*if (Serial.available())
     {
         serial = Serial.readString();
