@@ -287,6 +287,7 @@ void setup()
     esp_sleep_enable_touchpad_wakeup();
 
     Serial.println("Player setup done.");
+    Serial.println("Going to sleep.");
     Serial2.println("?reset=true");
 
     startSleepTimer();
@@ -313,6 +314,7 @@ void loop()
     else if (serial.startsWith("?sleep=true"))
     {
         resetLogic();
+        Serial.println("Going to sleep.");
         esp_deep_sleep_start();
     }
 
