@@ -6,60 +6,11 @@ const char playerIndex[] = R"=====(
 )=====";
 
 const char playerSolution[] = R"=====(
-<div class="wrapper">
-    <div class="headerWrapper solutionHeaderWrapper">
-        <p class="header"></p>
-    </div>
-    <div class="contentWrapper">
-        <p id="feedback"></p>
-    </div>
-    <div class="contentWrapper">
-        <p id="solution"></p>
-    </div>
-    <div class="contentWrapper">
-        <p id="wait-info"></p>
-    </div>
-</div>
+<div class="wrapper"><div class="headerWrapper solutionHeaderWrapper"><p class="header"></p></div><div class="contentWrapper"><p id="feedback"></p></div><div class="contentWrapper"><p id="solution"></p></div><div class="contentWrapper"><p id="wait-info">Der Gamemaster wählt eine Fage aus. Bitte warten. </p></div></div>
 )=====";
 
 const char playerQuestion[] = R"=====(
-<div class="wrapper">
-    <div class="headerWrapper questionHeaderWrapper">
-        <p class="header questionHeader" id="question">Was macht den Schwarzwald so
-            bienenfreundlich?</p>
-    </div>
-    <div id="answers">
-        <div class="answerWrapperBlock">
-            <div class="oneAnswerWrapper">
-                <p class="questionTitle margin-right">Antwort A</p>
-                <div class="answerWrapper margin-right">
-                    <span id="answerA">Die vielen Höhenmeter, die Bienen gerne haben.</span>
-                </div>
-            </div>
-            <div class="oneAnswerWrapper">
-                <p class="margin-left questionTitle">Antwort B</p>
-                <div class="answerWrapper margin-left">
-                    <span id="answerB">Die gute Luftqualität im Schwarzwald.</span>
-                </div>
-            </div>
-        </div>
-        <div class="answerWrapperBlock">
-            <div class="oneAnswerWrapper">
-                <p class="margin-right questionTitle">Antwort C</p>
-                <div class="answerWrapper margin-right">
-                    <span id="answerC">Das viele Löwenzahn, das im Schwarzwald wächst.</span>
-                </div>
-            </div>
-            <div class="oneAnswerWrapper">
-                <p class="margin-left questionTitle">Antwort D</p>
-                <div class="answerWrapper margin-left">
-                    <span id="answerD">Der häufige und viele Schneefall im Schwarzwald.</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <button id="login-answer">Antwort einloggen</button>
-</div>
+ <div class="wrapper"><div class="headerWrapper questionHeaderWrapper"><p class="header questionHeader" id="question">Was macht den Schwarzwald so bienenfreundlich?</p></div><div id="answers"><div class="answerWrapperBlock"><div class="oneAnswerWrapper"><p class="questionTitle margin-right">Antwort A</p><button class="answerWrapper margin-right"><span id="answerA">Die vielen Höhenmeter, die Bienen gerne haben.</span></button></div><div class="oneAnswerWrapper"><p class="margin-left questionTitle">Antwort B</p><button class="answerWrapper margin-left"><span id="answerB">Die gute Luftqualität im Schwarzwald.</span></button></div></div><div class="answerWrapperBlock"><div class="oneAnswerWrapper margin-bottom"><p class="margin-right questionTitle">Antwort C</p><button class="answerWrapper margin-right"><span id="answerC">Das viele Löwenzahn, das im Schwarzwald wächst.</span></button></div><div class="oneAnswerWrapper margin-bottom"><p class="margin-left questionTitle">Antwort D</p><button class="answerWrapper margin-left"><span id="answerD">Der häufige und viele Schneefall im Schwarzwald.</span></button></div></div></div><button class="btn" id="login-answer">Antwort einloggen</button></div>
 )=====";
 
 const char playerVictory[] = R"=====(
@@ -71,6 +22,5 @@ const char playerDefeat[] = R"=====(
 )=====";
 
 const char playerError[] = R"=====(
-<h3>Ups!</h3>
-<p>Etwas ist schief gelaufen.</p>
+ <div class="wrapper"><div class="headerWrapper"><h3>Ups!</h3><p>Etwas ist schief gelaufen.</p></div></div>
 )=====";

@@ -58,6 +58,12 @@ input {
    font-size: 18px;
 }
 
+.btn:focus {
+   background-color: #436436;
+   color: #7a8f72;
+   border: solid #7a8f72;
+}
+
 .indexheaderWrapper {
    margin-top: 32px;
    margin-bottom: 20px;
@@ -96,7 +102,6 @@ input {
    min-height: 120px;
    border: none;
    transition: 50ms;
-   margin-bottom: 20px;
 }
 
 .answerWrapper:focus{
@@ -105,6 +110,9 @@ input {
    border: solid #efefef;
 }
 
+.margin-bottom {
+   margin-bottom: 30px;
+}
 .margin-right {
    margin-right: 10px;
 }
