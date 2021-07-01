@@ -13,6 +13,10 @@
 #define LED_SCORE_1 25
 #define LED_SCORE_2 26
 #define LED_SCORE_3 27
+#define TOUCH_PIN 2
+
+// TOUCH
+#define TOUCH_THRESHOLD 40
 
 // ROUTES
 #define ROUTE_INDEX_JS "GET /index.js"
@@ -26,8 +30,9 @@
 #define ROUTE_QUIT_GAME "GET /quit-game"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
-// SLEEP
-#define endTime 10000
+// DURATIONS
+#define RESET_TIME 300000
+#define SLEEP_TIME 10000
 
 // PAGES
 enum Page
@@ -55,6 +60,7 @@ int scoreMaster, scorePlayer;
 unsigned long lastTime;
 bool sleepTimerEnabled;
 long sleepTimer;
+unsigned long loopCount;
 
 // QUESTIONS
 struct Question
@@ -197,6 +203,23 @@ void updateScoreLEDs()
     }
 }
 
+// GAME LOGIC
+void resetLogic()
+{
+    sleepTimerEnabled = false;
+    sleepTimer = RESET_TIME;
+    loopCount = 0;
+    page = Page::INDEX;
+    scoreMaster = 0;
+    scorePlayer = 0;
+    question = "";
+    answer = "";
+    correct = "";
+    lockAnswer = false;
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
+}
+
 // SLEEP TIMER
 void updateSleepTimer()
 {
@@ -207,35 +230,36 @@ void updateSleepTimer()
         lastTime = time;
         if (sleepTimer <= 0)
         {
-            page = Page::INDEX;
-            scoreMaster = 0;
-            scorePlayer = 0;
-            digitalWrite(LED_CORRECT, LOW);
-            digitalWrite(LED_WRONG, LOW);
-            sleepTimerEnabled = false;
-            sleepTimer = endTime;
+            resetLogic();
+            Serial.println("Going to sleep.");
+            esp_deep_sleep_start();
         }
     }
 }
 
-void startSleepTimer()
+void startSleepTimer(long timeout)
 {
+    sleepTimer = timeout;
     lastTime = millis();
     sleepTimerEnabled = true;
 }
 
-// GAME LOGIC
-void resetLogic()
+void startSleepTimer()
 {
-    sleepTimerEnabled = false;
-    sleepTimer = endTime;
-    page = Page::INDEX;
-    scoreMaster = 0;
-    scorePlayer = 0;
-    question = "";
-    answer = "";
-    correct = "";
-    lockAnswer = false;
+    startSleepTimer(RESET_TIME);
+}
+
+// PRINTERS
+void printSleepTimer()
+{
+    Serial.print(sleepTimer / 1000);
+    Serial.println(" seconds until deep sleep.");
+}
+
+// CALLBACK
+void callback()
+{
+    // Do Nothing
 }
 
 // SETUP
@@ -244,6 +268,7 @@ void setup()
     // SETUP SERIAL
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
+    delay(1000);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
@@ -264,13 +289,23 @@ void setup()
     resetLogic();
     updateScoreLEDs();
 
+    // SETUP DEEP SLEEP
+    touchAttachInterrupt(TOUCH_PIN, callback, TOUCH_THRESHOLD);
+    esp_sleep_enable_touchpad_wakeup();
+
     Serial.println("Player setup done.");
     Serial2.println("?reset=true");
+
+    startSleepTimer();
+    printSleepTimer();
 }
 
 // MAIN LOOP
 void loop()
 {
+    if (loopCount % 10000 == 0)
+        printSleepTimer();
+
     /*if (Serial.available())
     {
         serial = Serial.readString();
@@ -281,6 +316,7 @@ void loop()
     {
         serial = Serial2.readString();
         Serial.println(serial);
+        startSleepTimer();
     }
 
     if (serial.startsWith("?reset=true"))
@@ -294,6 +330,7 @@ void loop()
         {
             if (client.available())
             {
+                startSleepTimer();
                 String header = client.readString();
                 if (header.endsWith("\n"))
                 {
@@ -427,7 +464,7 @@ void loop()
                         {
                             respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
                         }
-                        startSleepTimer();
+                        startSleepTimer(SLEEP_TIME);
                     }
                     else if (page == Page::SOLUTION)
                     {
@@ -461,4 +498,7 @@ void loop()
 
     updateScoreLEDs();
     updateSleepTimer();
+
+    // UPDATE LOOP COUNT
+    loopCount++;
 }
