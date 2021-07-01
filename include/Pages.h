@@ -2,14 +2,7 @@
 const char playerPage[] = R"=====(<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="style.css">$SCRIPT</head><body>$BODY</body></html>)=====";
 
 const char playerIndex[] = R"=====(
-<div class="wrapper">
-    <div class="headerWrapper indexheaderWrapper">
-        <p class="indexHeader">Willkommen Player!</p>
-        <p>Gib den Code des <br> Gamemasters ein </p>
-    </div>
-    <input type="text" name="gamecode-input" id="gamecode-input" placeholder="code...">
-    <button class="btn" id="enter-game">Spiel beitreten</button>
-</div>
+ <div class="wrapper"><div class="headerWrapper indexheaderWrapper"><p class="indexHeader">Willkommen Player!</p><p>Gib den Code des <br>Gamemasters ein </p></div><input type="text" name="gamecode-input" id="gamecode-input" placeholder="code..."><button class="btn" id="enter-game">Spiel beitreten</button></div>
 )=====";
 
 const char playerSolution[] = R"=====(
@@ -74,7 +67,7 @@ const char playerVictory[] = R"=====(
 )=====";
 
 const char playerDefeat[] = R"=====(
-<h3>Du hast verloren!</h3>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="stylesheet" href="style.css"><title>Niederlage</title></head><body><div class="wrapper"><div class="headerWrapper"><p class="header">Niederlage</h3></div></div></body></html>
 )=====";
 
 const char playerError[] = R"=====(
