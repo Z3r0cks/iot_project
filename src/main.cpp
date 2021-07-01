@@ -308,6 +308,7 @@ void loop()
     else if (serial.startsWith("?sleep=true"))
     {
         resetLogic();
+        Serial.println("Going to sleep.");
         esp_deep_sleep_start();
     }
 
