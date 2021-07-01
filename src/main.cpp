@@ -220,6 +220,15 @@ void resetLogic()
     digitalWrite(LED_WRONG, LOW);
 }
 
+// DEEP SLEEP
+void deepSleep()
+{
+    Serial.println("Going to sleep.");
+    Serial2.println("?sleep=true");
+    delay(5000);
+    esp_deep_sleep_start();
+}
+
 // SLEEP TIMER
 void updateSleepTimer()
 {
@@ -231,10 +240,7 @@ void updateSleepTimer()
         if (sleepTimer <= 0)
         {
             resetLogic();
-            Serial.println("Going to sleep.");
-            Serial2.println("?sleep=true");
-            delay(1000);
-            esp_deep_sleep_start();
+            deepSleep();
         }
     }
 }
@@ -309,9 +315,7 @@ void loop()
     else if (serial.startsWith("?sleep=true"))
     {
         resetLogic();
-        Serial.println("Going to sleep.");
-        delay(1000);
-        esp_deep_sleep_start();
+        deepSleep();
     }
 
     client = server.available();
