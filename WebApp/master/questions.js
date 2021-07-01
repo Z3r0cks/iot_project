@@ -1,17 +1,12 @@
 const questions = $QUESTIONS;
 for (const key in questions) {
-    const q = questions[key];
+    const quest = questions[key];
     const div = document.createElement("div");
     div.classList.add("question");
     div.id = key;
-    const text = document.createElement("div");
-    text.innerHTML = q.text;
+    
+    div.innerHTML = quest.text;
     div.appendChild(text);
-    for (const answer of q.answers) {
-        const a = document.createElement("a");
-        a.innerHTML = answer;
-        div.appendChild(a);
-    }
     function clickHandler() {
         const xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {

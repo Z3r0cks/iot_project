@@ -1,40 +1,67 @@
-<div class="scoreWrapper">
-    <div class="score">GM <span id="scoreM">$SCORE_MASTER</span> : <span id="scoreP">$SCORE_PLAYER</span> P</div>
-</div>
-<div class="headerWrapper">
-    <h3 class="header">Wähle eine Kategorie aus</h1>
-</div>
-<div class="catWrapper">
-    <a class="cat" href="#cat1">Flora</a>
-    <a class="cat" href="#cat2">Fauna</a>
-</div>
-<div class="catWrapper">
-    <a class="cat" href="#cat3">FuWa Things</a>
-    <a class="cat" href="#cat4">Berge und Flüsse</a>
-</div>
+<!DOCTYPE html>
+<html lang="en">
 
-<div id="cat1">
-    <div id="01_01" class="question"></div>
-    <div id="01_02" class="question"></div>
-    <div id="01_03" class="question"></div>
-    <div id="01_04" class="question"></div>
-</div>
-<div id="cat2">
-    <div id="02_01" class="question"></div>
-    <div id="02_02" class="question"></div>
-    <div id="02_03" class="question"></div>
-    <div id="02_04" class="question"></div>
-</div>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 
-<div id="cat3">
-    <div id="03_01" class="question"></div>
-    <div id="03_02" class="question"></div>
-    <div id="03_03" class="question"></div>
-    <div id="03_04" class="question"></div>
-</div>
-<div id="cat4">
-    <div id="04_01" class="question"></div>
-    <div id="04_02" class="question"></div>
-    <div id="04_03" class="question"></div>
-    <div id="04_04" class="question"></div>
-</div>
+<body>
+    <div class="wrapper">
+        <div class="scoreWrapper">
+            <div class="score">GM <span id="scoreM">$SCORE_MASTER</span> : <span id="scoreP">$SCORE_PLAYER</span> P
+            </div>
+        </div>
+        <div class="headerWrapper questionHeader">
+            <h3 class="header">Wähle eine Kategorie aus</h1>
+        </div>
+
+        <div class="categories">
+            <div class="catBlockWrapper">
+                <div class="catWrapper">
+                    <a class="cat" href="#cat1">Flora</a>
+                </div>
+                <div class="catWrapper">
+                    <a class="cat" href="#cat2">Fauna</a>
+                </div>
+            </div>
+            <div class="catBlockWrapper">
+                <div class="catWrapper">
+                    <a class="cat" href="#cat3">FuWa Things</a>
+                </div>
+                <div class="catWrapper">
+                    <a class="cat" href="#cat4">Berge und Flüsse</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="cat1">
+            <div class="catTitleWrapper">
+                <h3 class="catText">Flora</h3>
+            </div>
+        </div>
+
+        <div id="cat2">
+            <div class="catTitleWrapper">
+                <h3 class="catText">Fauna</h3>
+            </div>
+        </div>
+
+        <div id="cat3">
+            <div class="catTitleWrapper">
+                <h3 class="catText">FuWa Things</h3>
+            </div>
+        </div>
+
+        <div id="cat4">
+            <div class="catTitleWrapper">
+                <h3 class="catText">Berge und Flüsse</h3>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
