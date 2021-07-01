@@ -153,7 +153,7 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String script)
+String getPage(String raw, String title, String bodyClass, String script)
 {
     String html = String(playerPage);
     html.replace("$TITLE", title);
@@ -163,6 +163,7 @@ String getPage(String raw, String title, String script)
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
+    page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
 }
@@ -420,11 +421,11 @@ void loop()
                     {
                         if (scorePlayer == 3)
                         {
-                            respond(getPage(playerVictory, "Quiz gewonnen", ""));
+                            respond(getPage(playerVictory, "Quiz gewonnen", "victoryBody", ""));
                         }
                         else
                         {
-                            respond(getPage(playerDefeat, "Quiz verloren", ""));
+                            respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
                         }
                         startSleepTimer();
                     }
@@ -434,21 +435,21 @@ void loop()
                         String title = "Auflösung";
                         if (question.isEmpty())
                             title = "Warte auf Frage";
-                        respond(getPage(playerSolution, title, "solution.js"));
+                        respond(getPage(playerSolution, title, "solutionBody", "solution.js"));
                     }
                     else if (page == Page::QUESTION)
                     {
-                        respond(getPage(playerQuestion, "Frage", "question.js"));
+                        respond(getPage(playerQuestion, "Frage", "questionBody", "question.js"));
                         digitalWrite(LED_CORRECT, LOW);
                         digitalWrite(LED_WRONG, LOW);
                     }
                     else if (page == Page::INDEX)
                     {
-                        respond(getPage(playerIndex, "Code", "index.js"));
+                        respond(getPage(playerIndex, "Code", "indexBody", "index.js"));
                     }
                     else
                     {
-                        error(getPage(playerError, "Fehler", ""));
+                        error(getPage(playerError, "Fehler", "errorBody", ""));
                     }
                     break;
                 }
