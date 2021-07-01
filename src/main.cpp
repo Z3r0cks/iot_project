@@ -303,8 +303,8 @@ void setup()
 // MAIN LOOP
 void loop()
 {
-    if (loopCount % 10000 == 0)
-        printSleepTimer();
+    // if (loopCount % 10000 == 0)
+        // printSleepTimer();
 
     /*if (Serial.available())
     {
