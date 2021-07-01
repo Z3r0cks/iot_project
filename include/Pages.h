@@ -10,7 +10,7 @@ const char masterQuestions[] = R"=====(
 )=====";
 
 const char masterSolution[] = R"=====(
- <div class="wrapper"><div class="scoreWrapper"><div class="score">GM <span id="scoreM">$SCORE_MASTER</span>: <span id="scoreP">$SCORE_PLAYER</span>P </div></div><div class="headerWrapper solutionWrapper"><p class="solutionText" id="solution">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Dicta enim ex explicabo. A deserunt beatae velit rem optio, sequi esse vitae omnis facilis. Aliquam sed, esse culpa molestiae asperiores inventore!</p></div><div class="headerWrapper solutionWrapper2"><p class="solutionText" id="wait-info">Warte bis der Gamemaster eine neue Frage ausgewählt hat</p></div>
+<div class="wrapper"><div class="scoreWrapper"><div class="score">GM <span id="scoreM">$SCORE_MASTER</span>: <span id="scoreP">$SCORE_PLAYER</span>P </div></div><div class="headerWrapper solutionWrapper"><p class="solutionText" id="solution"></p></div><div class="headerWrapper solutionWrapper2"><p class="solutionText" id="wait-info"></p></div></div>
 )=====";
 
 const char masterVictory[] = R"=====(
