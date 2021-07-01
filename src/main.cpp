@@ -205,6 +205,8 @@ void updateScoreLEDs()
 // GAME LOGIC
 void resetLogic()
 {
+    resetTimerEnabled = false;
+    resetTimer = endTime;
     sleepTimerEnabled = false;
     sleepTimer = endTime;
     page = Page::INDEX;
