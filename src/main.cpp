@@ -232,6 +232,7 @@ void updateSleepTimer()
             resetLogic();
             Serial.println("Going to sleep.");
             Serial2.println("?sleep=true");
+            delay(1000);
             esp_deep_sleep_start();
         }
     }
@@ -315,6 +316,7 @@ void loop()
     {
         resetLogic();
         Serial.println("Going to sleep.");
+        delay(1000);
         esp_deep_sleep_start();
     }
 
