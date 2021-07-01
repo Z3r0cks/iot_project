@@ -157,7 +157,7 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String script)
+String getPage(String raw, String title, String bodyClass, String script)
 {
     String html = String(masterPage);
     html.replace("$TITLE", title);
@@ -167,6 +167,7 @@ String getPage(String raw, String title, String script)
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
+    page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
 }
@@ -412,30 +413,30 @@ void loop()
                     {
                         if (scorePlayer == 3)
                         {
-                            respond(getPage(masterDefeat, "Quiz verloren", ""));
+                            respond(getPage(masterDefeat, "Quiz verloren", "defeatBody", ""));
                         }
                         else
                         {
-                            respond(getPage(masterVictory, "Quiz gewonnen", ""));
+                            respond(getPage(masterVictory, "Quiz gewonnen", "victoryBody", ""));
                         }
                         startSleepTimer();
                     }
                     else if (page == Page::SOLUTION)
                     {
                         lockQuestion = false;
-                        respond(getPage(masterSolution, "Erklärung", "solution.js"));
+                        respond(getPage(masterSolution, "Erklärung", "solutionBody", "solution.js"));
                     }
                     else if (page == Page::QUESTIONS)
                     {
-                        respond(getPage(masterQuestions, "Frage wählen", "questions.js"));
+                        respond(getPage(masterQuestions, "Frage wählen", "questionsBody", "questions.js"));
                     }
                     else if (page == Page::INDEX)
                     {
-                        respond(getPage(masterIndex, "Code", "index.js"));
+                        respond(getPage(masterIndex, "Code", "indexBody", "index.js"));
                     }
                     else
                     {
-                        error(getPage(masterError, "Fehler", ""));
+                        error(getPage(masterError, "Fehler", "errorBody" ,""));
                     }
                     break;
                 }
