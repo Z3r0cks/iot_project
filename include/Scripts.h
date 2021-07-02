@@ -1,18 +1,5 @@
 const char masterIndexJS[] = R"=====(
-document.querySelector("#gamecode").innerHTML = "$KEY";
-const interval = setInterval(function () {
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            if (this.responseText.trim() == "$VALIDATION") {
-                clearInterval(interval);
-                window.location.reload();
-            }
-        }
-    };
-    xhttp.open("GET", "validate-key", true);
-    xhttp.send();
-}, 1000);
+document.querySelector("#gamecode").innerHTML="$KEY";const interval=setInterval((function(){const e=new XMLHttpRequest;e.onreadystatechange=function(){4==this.readyState&&200==this.status&&"$VALIDATION"==this.responseText.trim()&&(clearInterval(interval),window.location.reload())},e.open("GET","validate-key",!0),e.send()}),1e3);
 )=====";
 
 const char masterQuestionsJS[] = R"=====(
@@ -20,20 +7,9 @@ const questions=$QUESTIONS;for(const e in questions){const t=questions[e],n=docu
 )=====";
 
 const char masterSolutionJS[] = R"=====(
-const questions = $QUESTIONS;
-document.querySelector("#solution").innerHTML = questions["$ID"].text;
-document.querySelector("#wait-info").innerHTML = questions["$ID"].explanation;
-const interval = setInterval(function () {
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            if (this.responseText.trim() == "$VALIDATION") {
-                clearInterval(interval);
-                window.location.reload();
-            }
-        }
-    };
-    xhttp.open("GET", "validate-answer", true);
-    xhttp.send();
-}, 1000);
+const questions=$QUESTIONS;document.querySelector("#solution").innerHTML=questions.$ID.text,document.querySelector("#wait-info").innerHTML=questions.$ID.explanation;const interval=setInterval((function(){const e=new XMLHttpRequest;e.onreadystatechange=function(){4==this.readyState&&200==this.status&&"$VALIDATION"==this.responseText.trim()&&(clearInterval(interval),window.location.reload())},e.open("GET","validate-answer",!0),e.send()}),1e3);
+)=====";
+
+const char masterFormJs[] = R"=====(
+
 )=====";

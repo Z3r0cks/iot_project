@@ -18,7 +18,7 @@
 // TOUCH
 #define TOUCH_THRESHOLD 40
 
-// ROUTES
+// ROUTES QUIZ
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_QUESTIONS_JS "GET /questions.js"
 #define ROUTE_SOLUTION_JS "GET /solution.js"
@@ -26,6 +26,11 @@
 #define ROUTE_CHOOSE_QUESTION "GET /choose-question"
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
 #define ROUTE_STYLE_CSS "GET /style.css"
+
+// ROUTES FORM
+#define ROUTE_FORM "GET /suggest-question"
+#define ROUTE_FORM_JS "GET /form.js"
+#define ROUTE_FORM_SUBMIT "POST /submit-question"
 
 // DURATIONS
 #define RESET_TIME 300000

@@ -24,3 +24,7 @@ const char masterDefeat[] = R"=====(
 const char masterError[] = R"=====(
  <div class="wrapper"><div class="headerWrapper"><h3>Ups!</h3><p>Etwas ist schief gelaufen.</p></div></div>
 )=====";
+
+const char masterForm[] = R"=====(
+  
+)=====";
