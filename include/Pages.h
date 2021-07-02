@@ -1,5 +1,7 @@
 // $TITLE, $SCRIPT, $BODY
-const char masterPage[] = R"=====(<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="style.css">$SCRIPT</head><body class="$CLASS">$BODY</body></html>)=====";
+const char masterPage[] = R"=====(
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>$TITLE</title><link rel="stylesheet" href="$STYLE">$SCRIPT</head><body class="$CLASS">$BODY</body></html>
+)=====";
 
 const char masterIndex[] = R"=====(
  <div class="wrapper"><div class="headerWrapper"><h3 class="">Code</h3><h1 class="" id="gamecode">----</h1></div></div>
@@ -18,13 +20,9 @@ const char masterVictory[] = R"=====(
 )=====";
 
 const char masterDefeat[] = R"=====(
-  <div class="wrapper"><div class="headerWrapper"><h3 class="header siegHeader">Leider verloren</h3><p>Das Quiz beendet sich in 10 Sekunden</p></div></div>
+<div class="wrapper"><div class="headerWrapper"><h3 class="header siegHeader">Leider verloren</h3><p>Das Quiz beendet sich in 10 Sekunden</p></div></div>
 )=====";
 
-const char masterError[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3>Ups!</h3><p>Etwas ist schief gelaufen.</p></div></div>
-)=====";
-
-const char masterForm[] = R"=====(
-  
+const char formIndex[] = R"=====(
+<form class="wrapper" id="form"><h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1><h2 class="text">Neue Frage erstellen</h2><label class="text question" for="question">Frage</label><textarea class="textarea m-b" name="" id="question" cols=" 30" rows="10"></textarea><label class="text question" for="a">Antwort A</label><input class="input m-b" id="answerA" type="text" id="answerA"><label class="text question" for="b">Antwort B</label><input class="input m-b" type="text" id="answerB"><label class="text question" for="c">Antwort C</label><input class="input m-b" type="text" id="answerC"><label class="text question" for="d">Antwort D</label><input class="input m-b" type="text" id="answerD"><p id="error" class="text">Alle Felder müssen ausgefüllt sein.</p><p id="success" class="text">Die Frage wurde erfolgreich eingereicht. Sie wird geprüft und ggf. in das Quiz aufgenommen.</p><button class="btn" type="button" id="submit">Frage einreichen</button></form>
 )=====";
