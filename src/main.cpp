@@ -5,6 +5,11 @@
 #include <Scripts.h>
 #include <Styles.h>
 
+extern "C"
+{
+#include "crypto/base64.h"
+}
+
 // PIN LAYOUT
 #define RXD 16
 #define TXD 17
@@ -12,7 +17,7 @@
 #define LED_WRONG 23
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
-#define LED_SCORE_3 14 //old 27
+#define LED_SCORE_3 14
 #define TOUCH_PIN 2
 
 // TOUCH
@@ -30,13 +35,18 @@
 // ROUTES FORM
 #define ROUTE_FORM "GET /suggest-question"
 #define ROUTE_FORM_JS "GET /form.js"
-#define ROUTE_FORM_SUBMIT "POST /submit-question"
+#define ROUTE_FORM_SUBMIT "GET /submit-question"
 #define ROUTE_FORM_GET "GET /download-questions"
+#define ROUTE_DOWNLOAD_JS "GET /download.js"
 #define ROUTE_FORM_CLEAR "GET /clear-questions"
+#define ROUTE_FORM_CSS "GET /form.css"
 
 // DURATIONS
 #define RESET_TIME 300000
 #define SLEEP_TIME 10000
+
+// FILE PATHS
+const String QUESTIONS_JSON = "/questions.json";
 
 // PAGES
 enum Page
@@ -56,7 +66,7 @@ WiFiServer server(80);
 
 // GLOBAL VARS
 Page page;
-String key, validation, serial, question;
+String key, validation, serial, question, download;
 bool lockQuestion;
 int scoreMaster, scorePlayer;
 
@@ -89,8 +99,8 @@ struct Question
 const Question questions[] = {
     Question("01_01", "1", "Was macht den Schwarzwald so bienenfreundlich?", "Wegen der Höhenlage", "Wegen dem vielen Schnee", "Es wächst viel Löwenzahn in der Gegend", "Wegen der guten Luft", "Der Löwenzahn blüht von April bis Juni und hat auf die Entwicklung von Bienenvölkern großen Einfluss.", "C"),
     Question("01_02", "1", "Wieso verlieren Tannen im Winter nicht ihre Nadeln?", "Weil Tannen besser Wärme speichern können", "Weil die Nadeln eng beieinander liegen und sich dadurch gegenseitig wärmen", "Durch eine Art Salz, was als Frostschutzmittel dient", "Durch eine Art Zucker, was als Frostschutzmittel dient", "Durch Zucker gefriert das Wasser in den Zellen der Tannen nicht und die Nadeln müssen nicht abfallen. <br>Außerdem speichern Tannen weniger Wasser als Laubbäume, ihre Nadeln sind dicker und haben ein festeres Gewebe. Alles gemeinsam schützt vor dem Erfrieren.", "D"),
-    Question("02_01", "2", "Von was ernähren sich Rehe in der Periode von März bis April?", "Bärlappgewächse ", "Beeren", "Gräser und Knospen", "Zweikeimblättrige Kräute", "Rehe fressen in fünf verschiedenen Äsungsperioden: <br> 1. Mitte März bis Ende April: Knospen und Gräser <br> 2. Mai bis Ende Juni: Einkeimblättrige Kräuter und Laubtriebe <br> 3. Juni bis Mitte Oktober: Zweikeimblättrige Kräuter <br> 4. Mitte Oktober bis Mitte Dezember: Farne, Bärlappgewächse, Schachtelhalme, <br> Brombeeren und verschiedene Knospen <br> 5. Überbrückung bis zur nächsten Äsung: Gräser, Brombeeren und Knospen" , "C"),
-    Question("02_01", "2", "Welcher Pilz ist nicht giftig?", "Kegelhütiger Knollenblätterpilz", "Pantherpilz","Kastanienbrauner Schirmling","Stockschwämmchen", "Das Stockschwämmchen wächst auf morschem Holz. Die Stieloberfläche ist beim Stockschwämmchen raufaserig bis feinschuppig aufgerissen und unterscheidet sich damit deutlich von der silbrig überfaserten Stiloberfläche beim Gift-Häubling.", "D"),
+    Question("02_01", "2", "Von was ernähren sich Rehe in der Periode von März bis April?", "Bärlappgewächse ", "Beeren", "Gräser und Knospen", "Zweikeimblättrige Kräute", "Rehe fressen in fünf verschiedenen Äsungsperioden: <br> 1. Mitte März bis Ende April: Knospen und Gräser <br> 2. Mai bis Ende Juni: Einkeimblättrige Kräuter und Laubtriebe <br> 3. Juni bis Mitte Oktober: Zweikeimblättrige Kräuter <br> 4. Mitte Oktober bis Mitte Dezember: Farne, Bärlappgewächse, Schachtelhalme, <br> Brombeeren und verschiedene Knospen <br> 5. Überbrückung bis zur nächsten Äsung: Gräser, Brombeeren und Knospen", "C"),
+    Question("02_01", "2", "Welcher Pilz ist nicht giftig?", "Kegelhütiger Knollenblätterpilz", "Pantherpilz", "Kastanienbrauner Schirmling", "Stockschwämmchen", "Das Stockschwämmchen wächst auf morschem Holz. Die Stieloberfläche ist beim Stockschwämmchen raufaserig bis feinschuppig aufgerissen und unterscheidet sich damit deutlich von der silbrig überfaserten Stiloberfläche beim Gift-Häubling.", "D"),
     Question("03_01", "3", "Aus was entstand die Hochschule Furtwangen?", "Uhrmacherschule", "Baumschule", "Katholisches Kloster", "Volkshochschulkurs", "1850 wurde die Großherzogliche Badische Uhrmacherschule Furtwangen von Robert Gerwig gegründet. <br> 1947 wurde diese zur Staatlichen Ingenieurschule Furtwangen/Schwarzwald. <br> 1971 wurde diese zur Fachhochschule Furtwangen FHF. <br> 1997 wurde sie zur Hochschule für Technik und Wissenschaft umfirmiert", "A"),
     Question("03_03", "3", "Welche Sage gibt es über Studierende der Hochschule Furtwangen?", "Wer mindestens drei mal in der Woche in der Mensa isst, besteht seine Prüfungen", "Wenn Studierende während ihres Studiums das Uhrenmuseum besuchen, schaffen sie ihren Abschluss nicht.", "Studierende die im Wohnheim GHB wohnen, werden von den Professor:inn:en bevorzugt.", "Die Statue an der Brücke vor dem B-Bau der Hochschule, soll die erste weibliche Absolventin darstellen.", "Schon im ersten Semester wird den Studierenden beigebracht, dass sie erst nach ihrem bestandenen Abschluss, das Uhrenmuseum betreten sollten, da sie sonst keinen Abschluss schaffen werden.", "B"),
     Question("03_04", "3", "Wie viele Höhenmeter trennen den niedrigsten vom höchsten Punkt der Stadt Furtwangen?", "ca 500m", "ca 600m", "ca 400m", "ca 300m", "Tiefster Punkt: 850 m (Allmendstraße bei REWE) <br><br>Höchster Punkt: 1148 m (Brend) <br><br> -> ca. 300 m", "D"),
@@ -169,19 +179,25 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String bodyClass, String script)
+String getPage(String raw, String title, String bodyClass, String script, String style)
 {
     String html = String(masterPage);
     html.replace("$TITLE", title);
     if (!script.isEmpty())
         script = "<script src=\"" + script + "\" defer></script>";
     html.replace("$SCRIPT", script);
+    html.replace("$STYLE", style);
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
     page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
+}
+
+String getPage(String raw, String title, String bodyClass, String script)
+{
+    return getPage(raw, title, bodyClass, script, "style.css");
 }
 
 // SCORE LEDS
@@ -270,7 +286,7 @@ void setup()
     // SETUP SERIAL
     Serial.begin(7200);
     Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
-    delay(1000);
+    delay(1500);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
@@ -286,7 +302,7 @@ void setup()
     Serial.print("Server running at ");
     Serial.print(ip);
     Serial.println(".");
-    
+
     // SETUP SPIFFS
     SPIFFS.begin(true);
 
@@ -340,6 +356,7 @@ void loop()
                 String header = client.readString();
                 if (header.endsWith("\n"))
                 {
+                    // MASTER ROUTES
                     if (header.startsWith(ROUTE_INDEX_JS))
                     {
                         validation = randomKey(8);
@@ -449,20 +466,73 @@ void loop()
                         respond(masterStyle, "text/css");
                         break;
                     }
-                    else if (header.startsWith(ROUTE_FORM_JS)) {
-
+                    // FORM ROUTES
+                    else if (header.startsWith(ROUTE_FORM_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(formIndexJS);
+                        script.replace("$VALIDATION", validation);
+                        respond(script, "application/javascript");
+                        break;
                     }
-                    else if (header.startsWith(ROUTE_FORM)) {
-
+                    else if (header.startsWith(ROUTE_DOWNLOAD_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(formDownloadJS);
+                        script.replace("$VALIDATION", validation);
+                        script.replace("$DOWNLOAD", download);
+                        respond(script, "application/javascript");
+                        break;
                     }
-                    else if (header.startsWith(ROUTE_FORM_SUBMIT)) {
-
+                    else if (header.startsWith(ROUTE_FORM))
+                    {
+                        respond(getPage(formIndex, "Frage vorschlagen", "", "form.js", "form.css"));
+                        break;
                     }
-                    else if (header.startsWith(ROUTE_FORM_GET)) {
+                    else if (header.startsWith(ROUTE_FORM_SUBMIT))
+                    {
+                        int start = header.indexOf("?data=") + 6;
+                        int end = header.indexOf("&end=true");
 
+                        String data = header.substring(start, end);
+                        //Serial.println(data);
+
+                        bool first = !SPIFFS.exists(QUESTIONS_JSON);
+                        File file = SPIFFS.open(QUESTIONS_JSON, FILE_APPEND);
+
+                        if (first)
+                            file.print("%5B");
+                        if (!first)
+                            file.print("%2C");
+                        file.print(data);
+                        file.close();
+
+                        respond(validation, "text/plain");
+                        break;
                     }
-                    else if (header.startsWith(ROUTE_FORM_CLEAR)) {
-
+                    else if (header.startsWith(ROUTE_FORM_GET))
+                    {
+                        download = "";
+                        File file = SPIFFS.open(QUESTIONS_JSON);
+                        while (file.available())
+                            download += char(file.read());
+                        file.close();
+                        if (download.isEmpty())
+                            download += "%5B";
+                        download += "%5D";
+                        respond(getPage("", "Fragen Download", "", "download.js", "form.css"));
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_FORM_CLEAR))
+                    {
+                        SPIFFS.remove(QUESTIONS_JSON);
+                        respond(validation, "text/plain");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_FORM_CSS))
+                    {
+                        respond(formStyle, "text/css");
+                        break;
                     }
 
                     // PAGES

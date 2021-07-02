@@ -61,14 +61,16 @@ input:focus {
 }
 
 #error {
-    display: none;
     background: rgba(255, 94, 0, 0.5);
     color: rgb(230, 230, 230);
     padding: 0.2em;
 }
 
 #success {
-    display: none;
     border: 2px solid #fefefe;
     padding: 0.5em;
+}
+
+.hidden {
+    display: none;
 }
