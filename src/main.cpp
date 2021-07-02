@@ -31,6 +31,8 @@
 #define ROUTE_FORM "GET /suggest-question"
 #define ROUTE_FORM_JS "GET /form.js"
 #define ROUTE_FORM_SUBMIT "POST /submit-question"
+#define ROUTE_FORM_GET "GET /download-questions"
+#define ROUTE_FORM_CLEAR "GET /clear-questions"
 
 // DURATIONS
 #define RESET_TIME 300000
@@ -148,14 +150,14 @@ void respond(String html)
     respond(html, "text/html");
 }
 
-void error(String html)
+void error(String data)
 {
     client.println("HTTP/1.1 404 Not Found");
     client.println("Content-type: text/html");
     client.println("Connection: close");
     client.println();
-    if (!html.isEmpty())
-        client.println(html);
+    if (!data.isEmpty())
+        client.println(data);
 }
 
 // RANDOM KEY GENERATOR
@@ -284,6 +286,9 @@ void setup()
     Serial.print("Server running at ");
     Serial.print(ip);
     Serial.println(".");
+    
+    // SETUP SPIFFS
+    SPIFFS.begin(true);
 
     // SETUP LOGIC
     resetLogic();
@@ -444,6 +449,21 @@ void loop()
                         respond(masterStyle, "text/css");
                         break;
                     }
+                    else if (header.startsWith(ROUTE_FORM_JS)) {
+
+                    }
+                    else if (header.startsWith(ROUTE_FORM)) {
+
+                    }
+                    else if (header.startsWith(ROUTE_FORM_SUBMIT)) {
+
+                    }
+                    else if (header.startsWith(ROUTE_FORM_GET)) {
+
+                    }
+                    else if (header.startsWith(ROUTE_FORM_CLEAR)) {
+
+                    }
 
                     // PAGES
                     if (page == Page::ENDSCREEN)
@@ -470,10 +490,6 @@ void loop()
                     else if (page == Page::INDEX)
                     {
                         respond(getPage(masterIndex, "Code", "indexBody", "index.js"));
-                    }
-                    else
-                    {
-                        error(getPage(masterError, "Fehler", "errorBody", ""));
                     }
                     break;
                 }
