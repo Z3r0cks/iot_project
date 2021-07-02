@@ -6,15 +6,15 @@ const char playerIndex[] = R"=====(
 )=====";
 
 const char playerSolution[] = R"=====(
- <div class="wrapper"><div class="scoreWrapper"><div class="score">P <span id="scoreP">$SCORE_PLAYER</span>: <span id="scoreM">$SCORE_MASTER</span>GM </div></div><div class="headerWrapper solutionHeaderWrapper"><p class="header"></p></div><div class="contentWrapper"><p id="feedback"></p></div><div class="contentWrapper"><p id="solution"></p></div><div class="contentWrapper"><p id="wait-info">Der Gamemaster wählt eine Fage aus. Bitte warten. </p></div></div>
+ <div class="wrapper"><div class="scoreWrapper"><div class="score">P&nbsp;<span id="scoreP">$SCORE_PLAYER</span>&nbsp;:&nbsp;<span id="scoreM">$SCORE_MASTER</span>&nbsp;GM</div></div><div class="headerWrapper solutionHeaderWrapper"><p class="header"></p></div><div class="contentWrapper"><p id="feedback"></p></div><div class="contentWrapper"><p id="solution"></p></div><div class="contentWrapper"><p id="wait-info">Der Gamemaster wählt eine Fage aus. Bitte warten.</p></div></div>
 )=====";
 
 const char playerQuestion[] = R"=====(
- <div class="wrapper"><div class="scoreWrapper"><div class="score">P <span id="scoreP">$SCORE_PLAYER</span>: <span id="scoreM">$SCORE_MASTER</span>GM</div></div><div class="headerWrapper questionHeaderWrapper"><p class="header questionHeader" id="question"></p></div><div id="answers"><div class="answerWrapperBlock"><div class="oneAnswerWrapper"><p class="questionTitle margin-right">Antwort A</p><button class="answerWrapper margin-right"><span id="answerA"></span></button></div><div class="oneAnswerWrapper"><p class="margin-left questionTitle">Antwort B</p><button class="answerWrapper margin-left"><span id="answerB"></span></button></div></div><div class="answerWrapperBlock"><div class="oneAnswerWrapper margin-bottom"><p class="margin-right questionTitle">Antwort C</p><button class="answerWrapper margin-right"><span id="answerC"></span></button></div><div class="oneAnswerWrapper margin-bottom"><p class="margin-left questionTitle">Antwort D</p><button class="answerWrapper margin-left"><span id="answerD"></span></button></div></div></div><button class="btn" id="login-answer">Antwort einloggen</button></div>
+<div class="wrapper"><div class="scoreWrapper"><div class="score">P&nbsp;<span id="scoreP">$SCORE_PLAYER</span>&nbsp;:&nbsp;<span id="scoreM">$SCORE_MASTER</span>&nbsp;GM</div></div><div class="headerWrapper questionHeaderWrapper"><p class="header questionHeader" id="question"></p></div><div id="answers"><div class="answerWrapperBlock"><div class="oneAnswerWrapper"><p class="questionTitle margin-right">Antwort A</p><button class="answerWrapper margin-right"><span id="answerA"></span></button></div><div class="oneAnswerWrapper"><p class="margin-left questionTitle">Antwort B</p><button class="answerWrapper margin-left"><span id="answerB"></span></button></div></div><div class="answerWrapperBlock"><div class="oneAnswerWrapper margin-bottom"><p class="margin-right questionTitle">Antwort C</p><button class="answerWrapper margin-right"><span id="answerC"></span></button></div><div class="oneAnswerWrapper margin-bottom"><p class="margin-left questionTitle">Antwort D</p><button class="answerWrapper margin-left"><span id="answerD"></span></button></div></div></div><button class="btn" id="login-answer">Antwort einloggen</button></div>
 )=====";
 
 const char playerVictory[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3 class="header">Gewonnen</h3><p>Das Quiz beendet sich in 10 Sekunde, du kansch weggehe</p></div></div>
+ <div class="wrapper"><div class="headerWrapper"><h3 class="header">Gewonnen</h3><p>Das Quiz beendet sich in 10 Sekunden</p></div></div>
 )=====";
 
 const char playerDefeat[] = R"=====(
