@@ -139,14 +139,14 @@ void respond(String html)
     respond(html, "text/html");
 }
 
-void error(String html)
+void error(String data)
 {
     client.println("HTTP/1.1 404 Not Found");
     client.println("Content-type: text/html");
     client.println("Connection: close");
     client.println();
-    if (!html.isEmpty())
-        client.println(html);
+    if (!data.isEmpty())
+        client.println(data);
 }
 
 // RANDOM KEY GENERATOR
@@ -451,11 +451,6 @@ void loop()
                     else if (header.startsWith(ROUTE_STYLE_CSS))
                     {
                         respond(playerStyle, "text/css");
-                        break;
-                    }
-                    else
-                    {
-                        error(getPage(playerError, "Fehler", "errorBody", ""));
                         break;
                     }
 
