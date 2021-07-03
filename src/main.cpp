@@ -272,11 +272,6 @@ void resetLogic()
 }
 
 // DEEP SLEEP
-void deepSleep()
-{
-    deepSleep("");
-}
-
 void deepSleep(String errorMessage)
 {
     if (!errorMessage.isEmpty())
@@ -289,6 +284,11 @@ void deepSleep(String errorMessage)
     sendMessage("?sleep=true");
     delay(5000);
     esp_deep_sleep_start();
+}
+
+void deepSleep()
+{
+    deepSleep("");
 }
 
 // SLEEP TIMER
