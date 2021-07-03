@@ -4,7 +4,7 @@ const char masterPage[] = R"=====(
 )=====";
 
 const char masterIndex[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3 class="">Code</h3><h1 class="" id="gamecode">----</h1></div><a class="btn" href="/suggest-question">Frage vorschlagen</a></div>
+ <div class="wrapper"><div class="headerWrapper"><h3 class="">Code</h3><h1 class="" id="gamecode">----</h1></div><a class="btn" href="/suggest-question"><span>Frage</span><span>vorschlagen</span></a></div>
 )=====";
 
 const char masterQuestions[] = R"=====(

@@ -52,6 +52,7 @@ body {
 a.btn {
    text-decoration: none;
    font-family: "Roboto", sans-serif;
+   flex-direction: column;
    display: flex;
    justify-content: center;
    align-items: center;
