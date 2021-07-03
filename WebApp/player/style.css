@@ -164,3 +164,10 @@ input {
 .questionBody {
    font-size: unset;
 }
+
+.error-message{
+   background-color: #efefef;
+   color: red;
+   padding: 12px;
+   width: 100%;
+}
