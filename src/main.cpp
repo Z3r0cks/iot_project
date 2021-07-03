@@ -34,6 +34,13 @@
 #define ROUTE_FORM_CLEAR "GET /clear-questions"
 #define ROUTE_FORM_CSS "GET /form.css"
 
+// DURATIONS
+#define RESET_TIME 300000
+#define SLEEP_TIME 10000
+
+// TOUCH
+#define TOUCH_THRESHOLD 40
+
 // FILE PATHS
 const String QUESTIONS_JSON = "/questions.json";
 
@@ -51,13 +58,6 @@ Page page;
 String key, validation, serial, question, download;
 bool lockQuestion;
 int scoreMaster, scorePlayer;
-
-// DURATIONS
-#define RESET_TIME 300000
-#define SLEEP_TIME 10000
-
-// TOUCH
-#define TOUCH_THRESHOLD 40
 
 // TIMER VARS
 unsigned long lastTime;
