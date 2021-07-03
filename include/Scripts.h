@@ -79,7 +79,7 @@ function validate() {
     data.b = b.value.trim();
     data.c = c.value.trim();
     data.d = d.value.trim();
-    return data.question.length > 0 && data.a > 0 && data.b > 0 && data.c > 0 && data.d > 0;
+    return data.question.length > 0 && data.a.length > 0 && data.b.length > 0 && data.c.length > 0 && data.d.length > 0;
 }
 
 function submitHandler(event) {
