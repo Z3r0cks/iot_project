@@ -54,6 +54,15 @@ input:focus {
     background-color: #7a8f72;
     color: white;
     font-size: 18px;
+    cursor: pointer;
+}
+
+a.btn {
+    text-decoration: none;
+    font-family: "Roboto", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .btn:hover {
@@ -73,4 +82,10 @@ input:focus {
 
 .hidden {
     display: none;
+}
+
+.btn-wrapper {
+    display: flex;
+    align-items: centers;
+    justify-content: space-around;
 }
