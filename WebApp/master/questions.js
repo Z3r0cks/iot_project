@@ -7,6 +7,7 @@ for (const key in questions) {
     
     div.innerHTML = quest.text;
     function clickHandler() {
+        this.classList.add("answerClicked");
         const xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
