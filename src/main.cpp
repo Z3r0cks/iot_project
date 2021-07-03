@@ -322,7 +322,7 @@ void startSleepTimer()
 void setup()
 {
     // SERIAL MONITOR
-    Serial.begin(9600);
+    Serial.begin(7200);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
