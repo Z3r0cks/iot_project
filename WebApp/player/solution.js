@@ -11,10 +11,10 @@ else
     header.innerHTML = "Warte auf Frage";
 
 if (rawQuestion) {
-    question = JSON.parse(rawQuestion);
+    const quest = JSON.parse(rawQuestion);
     const text = `Du hast ${answer} gewählt. Das ist ${answer == correct ? "richtig" : "falsch"}.`
     feedback.innerHTML = text;
-    solution.innerHTML = question.explanation;
+    solution.innerHTML = quest.explanation;
 }
 
 const interval = setInterval(function () {
