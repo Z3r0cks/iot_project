@@ -550,6 +550,4 @@ void loop()
 
     // UPDATE LOOP COUNT
     loopCount++;
-    // sendMessage("TEST");
-    // delay(2000);
 }
