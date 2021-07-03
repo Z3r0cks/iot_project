@@ -4,7 +4,7 @@ const char masterPage[] = R"=====(
 )=====";
 
 const char masterIndex[] = R"=====(
- <div class="wrapper"><div class="headerWrapper"><h3 class="">Code</h3><h1 class="" id="gamecode">----</h1></div></div>
+ <div class="wrapper"><div class="headerWrapper"><h3 class="">Code</h3><h1 class="" id="gamecode">----</h1></div><a class="btn" href="/suggest-question">Zurück</a></div>
 )=====";
 
 const char masterQuestions[] = R"=====(
@@ -24,5 +24,5 @@ const char masterDefeat[] = R"=====(
 )=====";
 
 const char formIndex[] = R"=====(
-<form class="wrapper" id="form"><h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1><h2 class="text">Neue Frage erstellen</h2><label class="text question" for="question">Frage</label><textarea class="textarea m-b" name="" id="question" cols=" 30" rows="10"></textarea><label class="text question" for="a">Antwort A</label><input class="input m-b" id="answerA" type="text" id="answerA"><label class="text question" for="b">Antwort B</label><input class="input m-b" type="text" id="answerB"><label class="text question" for="c">Antwort C</label><input class="input m-b" type="text" id="answerC"><label class="text question" for="d">Antwort D</label><input class="input m-b" type="text" id="answerD"><p id="error" class="text hidden">Alle Felder müssen ausgefüllt sein.</p><p id="success" class="text hidden">Die Frage wurde erfolgreich eingereicht. Sie wird geprüft und ggf. in das Quiz aufgenommen.</p><button class="btn" type="button" id="submit">Frage einreichen</button></form>
+<form class="wrapper" id="form"><h1 class="text">DIE NATUR FORDERT DICH HERAUS</h1><h2 class="text">Neue Frage erstellen</h2><label class="text question" for="question">Frage</label><textarea class="textarea m-b" name="" id="question" cols=" 30" rows="10"></textarea><label class="text question" for="a">Antwort A</label><input class="input m-b" id="answerA" type="text" id="answerA"><label class="text question" for="b">Antwort B</label><input class="input m-b" type="text" id="answerB"><label class="text question" for="c">Antwort C</label><input class="input m-b" type="text" id="answerC"><label class="text question" for="d">Antwort D</label><input class="input m-b" type="text" id="answerD"><p id="error" class="text hidden">Alle Felder müssen ausgefüllt sein.</p><p id="success" class="text hidden">Die Frage wurde erfolgreich eingereicht. Sie wird geprüft und ggf. in das Quiz aufgenommen.</p><button class="btn" type="button" id="submit">Frage einreichen</button><a class="btn" href="/">Zurück</a></form>
 )=====";

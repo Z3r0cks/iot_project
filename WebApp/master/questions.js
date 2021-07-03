@@ -1,18 +1,19 @@
 const questions = $QUESTIONS;
 for (const key in questions) {
     const quest = questions[key];
-    const div = document.createElement("button");
-    div.classList.add("question");
-    div.id = key;
+    const button = document.createElement("button");
+    button.classList.add("question");
+    button.id = key;
     
-    div.innerHTML = quest.text;
+    button.innerHTML = quest.text;
     function clickHandler() {
-        this.classList.add("answerClicked");
+        console.log(key);
+        button.classList.add("answerClicked");
         const xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function () {
             if (this.readyState == 4 && this.status == 200) {
                 if (this.responseText.trim() == "$VALIDATION") {
-                    div.removeEventListener("click", clickHandler);
+                    button.removeEventListener("click", clickHandler);
                     window.location.reload();
                 }
             }
@@ -20,6 +21,6 @@ for (const key in questions) {
         xhttp.open("GET", "choose-question?question=" + key, true);
         xhttp.send();
     }
-    div.addEventListener("click", clickHandler);
-    document.querySelector("#cat" + questions[key].category).appendChild(div);
+    button.addEventListener("click", clickHandler);
+    document.querySelector("#cat" + questions[key].category).appendChild(button);
 }
