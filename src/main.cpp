@@ -382,7 +382,6 @@ void setup()
 
     // SETUP LOGIC
     resetLogic();
-    updateScoreLEDs();
 
     // SETUP DEEP SLEEP
     touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
