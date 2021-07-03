@@ -165,11 +165,10 @@ input {
    font-size: unset;
 }
 
-.error-message{
+.error-message {
    background-color: #efefef;
    margin-top: 20px;
    border-radius: 25px;
-   color: #efefef;
+   color: #d42626;
    padding: 12px;
-   width: 100%;
 }
