@@ -167,7 +167,9 @@ input {
 
 .error-message{
    background-color: #efefef;
-   color: red;
+   margin-top: 20px;
+   border-radius: 25px;
+   color: #efefef;
    padding: 12px;
    width: 100%;
 }
