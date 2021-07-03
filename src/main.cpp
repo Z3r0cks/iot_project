@@ -1,27 +1,36 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
+
+#include <esp_now.h>
 #include <WiFi.h>
+
+#include <SPIFFS.h>
 #include <Pages.h>
 #include <Scripts.h>
 #include <Styles.h>
 
-extern "C"
-{
-#include "crypto/base64.h"
-}
-
 // PIN LAYOUT
-#define RXD 16
-#define TXD 17
 #define LED_CORRECT 22
 #define LED_WRONG 23
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
-#define LED_SCORE_3 14
+#define LED_SCORE_3 14 //old 27
 #define TOUCH_PIN 2
 
-// TOUCH
-#define TOUCH_THRESHOLD 40
+// PAGES
+enum Page
+{
+    INDEX,
+    QUESTIONS,
+    SOLUTION,
+    ENDSCREEN
+};
+
+// GLOBAL VARS
+Page page;
+String key, validation, serial, question;
+bool lockQuestion;
+int scoreMaster, scorePlayer;
+
 
 // ROUTES QUIZ
 #define ROUTE_INDEX_JS "GET /index.js"
@@ -35,40 +44,17 @@ extern "C"
 // ROUTES FORM
 #define ROUTE_FORM "GET /suggest-question"
 #define ROUTE_FORM_JS "GET /form.js"
-#define ROUTE_FORM_SUBMIT "GET /submit-question"
+#define ROUTE_FORM_SUBMIT "POST /submit-question"
 #define ROUTE_FORM_GET "GET /download-questions"
-#define ROUTE_DOWNLOAD_JS "GET /download.js"
 #define ROUTE_FORM_CLEAR "GET /clear-questions"
-#define ROUTE_FORM_CSS "GET /form.css"
 
 // DURATIONS
 #define RESET_TIME 300000
 #define SLEEP_TIME 10000
 
-// FILE PATHS
-const String QUESTIONS_JSON = "/questions.json";
 
-// PAGES
-enum Page
-{
-    INDEX,
-    QUESTIONS,
-    SOLUTION,
-    ENDSCREEN
-};
-
-// WIFI SETTINGS
-const char *ssid = "Nature Quiz (Game Master)";
-const char *password = NULL;
-
-WiFiClient client;
-WiFiServer server(80);
-
-// GLOBAL VARS
-Page page;
-String key, validation, serial, question, download;
-bool lockQuestion;
-int scoreMaster, scorePlayer;
+// TOUCH
+#define TOUCH_THRESHOLD 40
 
 // TIMER VARS
 unsigned long lastTime;
@@ -96,11 +82,75 @@ struct Question
     }
 };
 
+
+// WIFI SETTINGS
+const char *ssid = "Nature Quiz (Game Master)";
+const char *password = NULL;
+
+WiFiClient client;
+WiFiServer server(80);
+String header;
+
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress[] = {0xAC, 0x67, 0xB2, 0x2D, 0x34, 0xB0};
+
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message
+{
+    // String message;
+    char message[32];
+} struct_message;
+
+// Create a struct_message called myData
+struct_message sendData;
+
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+    Serial.print("\r\nLast Packet Send Status:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+//##################### RECIEVE ######################s
+// Create a struct_message to recieve data
+struct_message recieveData;
+
+// callback function that will be executed when data is received
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
+    memcpy(&recieveData, incomingData, sizeof(recieveData));
+    // Serial.print("Bytes received: ");
+    // Serial.println(len);
+    // Serial.print("Nachricht: ");
+    Serial.println(recieveData.message);
+    serial = recieveData.message;
+}
+
+void sendMessage(String message)
+{
+    // Set values to send
+    // sendData.message = message;
+    stpcpy(sendData.message, message.c_str());
+
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sendData, sizeof(sendData));
+    Serial.println(result);
+    if (result == ESP_OK)
+    {
+        Serial.println("Sent with success");
+    }
+    else
+    {
+        Serial.println("Error sending the data");
+    }
+}
+
 const Question questions[] = {
     Question("01_01", "1", "Was macht den Schwarzwald so bienenfreundlich?", "Wegen der Höhenlage", "Wegen dem vielen Schnee", "Es wächst viel Löwenzahn in der Gegend", "Wegen der guten Luft", "Der Löwenzahn blüht von April bis Juni und hat auf die Entwicklung von Bienenvölkern großen Einfluss.", "C"),
     Question("01_02", "1", "Wieso verlieren Tannen im Winter nicht ihre Nadeln?", "Weil Tannen besser Wärme speichern können", "Weil die Nadeln eng beieinander liegen und sich dadurch gegenseitig wärmen", "Durch eine Art Salz, was als Frostschutzmittel dient", "Durch eine Art Zucker, was als Frostschutzmittel dient", "Durch Zucker gefriert das Wasser in den Zellen der Tannen nicht und die Nadeln müssen nicht abfallen. <br>Außerdem speichern Tannen weniger Wasser als Laubbäume, ihre Nadeln sind dicker und haben ein festeres Gewebe. Alles gemeinsam schützt vor dem Erfrieren.", "D"),
-    Question("02_01", "2", "Von was ernähren sich Rehe in der Periode von März bis April?", "Bärlappgewächse ", "Beeren", "Gräser und Knospen", "Zweikeimblättrige Kräute", "Rehe fressen in fünf verschiedenen Äsungsperioden: <br> 1. Mitte März bis Ende April: Knospen und Gräser <br> 2. Mai bis Ende Juni: Einkeimblättrige Kräuter und Laubtriebe <br> 3. Juni bis Mitte Oktober: Zweikeimblättrige Kräuter <br> 4. Mitte Oktober bis Mitte Dezember: Farne, Bärlappgewächse, Schachtelhalme, <br> Brombeeren und verschiedene Knospen <br> 5. Überbrückung bis zur nächsten Äsung: Gräser, Brombeeren und Knospen", "C"),
-    Question("02_01", "2", "Welcher Pilz ist nicht giftig?", "Kegelhütiger Knollenblätterpilz", "Pantherpilz", "Kastanienbrauner Schirmling", "Stockschwämmchen", "Das Stockschwämmchen wächst auf morschem Holz. Die Stieloberfläche ist beim Stockschwämmchen raufaserig bis feinschuppig aufgerissen und unterscheidet sich damit deutlich von der silbrig überfaserten Stiloberfläche beim Gift-Häubling.", "D"),
+    Question("02_01", "2", "Von was ernähren sich Rehe in der Periode von März bis April?", "Bärlappgewächse ", "Beeren", "Gräser und Knospen", "Zweikeimblättrige Kräute", "Rehe fressen in fünf verschiedenen Äsungsperioden: <br> 1. Mitte März bis Ende April: Knospen und Gräser <br> 2. Mai bis Ende Juni: Einkeimblättrige Kräuter und Laubtriebe <br> 3. Juni bis Mitte Oktober: Zweikeimblättrige Kräuter <br> 4. Mitte Oktober bis Mitte Dezember: Farne, Bärlappgewächse, Schachtelhalme, <br> Brombeeren und verschiedene Knospen <br> 5. Überbrückung bis zur nächsten Äsung: Gräser, Brombeeren und Knospen" , "C"),
+    Question("02_01", "2", "Welcher Pilz ist nicht giftig?", "Kegelhütiger Knollenblätterpilz", "Pantherpilz","Kastanienbrauner Schirmling","Stockschwämmchen", "Das Stockschwämmchen wächst auf morschem Holz. Die Stieloberfläche ist beim Stockschwämmchen raufaserig bis feinschuppig aufgerissen und unterscheidet sich damit deutlich von der silbrig überfaserten Stiloberfläche beim Gift-Häubling.", "D"),
     Question("03_01", "3", "Aus was entstand die Hochschule Furtwangen?", "Uhrmacherschule", "Baumschule", "Katholisches Kloster", "Volkshochschulkurs", "1850 wurde die Großherzogliche Badische Uhrmacherschule Furtwangen von Robert Gerwig gegründet. <br> 1947 wurde diese zur Staatlichen Ingenieurschule Furtwangen/Schwarzwald. <br> 1971 wurde diese zur Fachhochschule Furtwangen FHF. <br> 1997 wurde sie zur Hochschule für Technik und Wissenschaft umfirmiert", "A"),
     Question("03_03", "3", "Welche Sage gibt es über Studierende der Hochschule Furtwangen?", "Wer mindestens drei mal in der Woche in der Mensa isst, besteht seine Prüfungen", "Wenn Studierende während ihres Studiums das Uhrenmuseum besuchen, schaffen sie ihren Abschluss nicht.", "Studierende die im Wohnheim GHB wohnen, werden von den Professor:inn:en bevorzugt.", "Die Statue an der Brücke vor dem B-Bau der Hochschule, soll die erste weibliche Absolventin darstellen.", "Schon im ersten Semester wird den Studierenden beigebracht, dass sie erst nach ihrem bestandenen Abschluss, das Uhrenmuseum betreten sollten, da sie sonst keinen Abschluss schaffen werden.", "B"),
     Question("03_04", "3", "Wie viele Höhenmeter trennen den niedrigsten vom höchsten Punkt der Stadt Furtwangen?", "ca 500m", "ca 600m", "ca 400m", "ca 300m", "Tiefster Punkt: 850 m (Allmendstraße bei REWE) <br><br>Höchster Punkt: 1148 m (Brend) <br><br> -> ca. 300 m", "D"),
@@ -109,6 +159,16 @@ const Question questions[] = {
     Question("04_03", "4", "Wie heißt der Größte Berg im Schwarzwald?", "Mount Everest", "Zugspitze", "Feldberg", "Brend", "Der Feldberg ist der höchste Berg im Schwarzwald. Er ist 1493 Meter hoch. Mit der Seilbahn kann man fast bis zum Gipfel fahren.", "C"),
     Question("04_04", "4", "Wieso wurde die Linachtalsperre ursprünglich gebaut?", "Zum Schutz vor Überschwemmungen nach einer Schneeschmelze", "Zur Stromgewinnung", "Damit ein Badesee entsteht", "Damit eine Örtliche Fischzucht entstehen kann", "Die Linachtalsperre wurde von 1922-1925 gebaut. <br> Bis 1969 wurde sie, wie ursprünglich geplant, zur örtlichen Stromgewinnung genutzt. <br> Aus Sicherheitsgründen wurde 1988 das Wasser abgelassen. <br> Seit ihrer Renovierung 2007 staut sie wieder das Wasser der Linach.", "B"),
 };
+
+String getAnswer(String id)
+{
+    for (const Question &quest : questions)
+    {
+        if (quest.id.equals(id))
+            return quest.correct;
+    }
+    return "";
+}
 
 String questionToJSON(Question quest)
 {
@@ -133,15 +193,6 @@ String questionsToJSON()
     return json + "}";
 }
 
-String getAnswer(String id)
-{
-    for (const Question &quest : questions)
-    {
-        if (quest.id.equals(id))
-            return quest.correct;
-    }
-    return "";
-}
 
 // HTTP RESPONSES
 void respond(String data, String contentType)
@@ -160,15 +211,6 @@ void respond(String html)
     respond(html, "text/html");
 }
 
-void error(String data)
-{
-    client.println("HTTP/1.1 404 Not Found");
-    client.println("Content-type: text/html");
-    client.println("Connection: close");
-    client.println();
-    if (!data.isEmpty())
-        client.println(data);
-}
 
 // RANDOM KEY GENERATOR
 unsigned long randomKey(int positions)
@@ -179,25 +221,19 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String bodyClass, String script, String style)
+String getPage(String raw, String title, String bodyClass, String script)
 {
     String html = String(masterPage);
     html.replace("$TITLE", title);
     if (!script.isEmpty())
         script = "<script src=\"" + script + "\" defer></script>";
     html.replace("$SCRIPT", script);
-    html.replace("$STYLE", style);
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
     page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
-}
-
-String getPage(String raw, String title, String bodyClass, String script)
-{
-    return getPage(raw, title, bodyClass, script, "style.css");
 }
 
 // SCORE LEDS
@@ -247,7 +283,8 @@ void resetLogic()
 void deepSleep()
 {
     Serial.println("Going to sleep.");
-    Serial2.println("?sleep=true");
+    // Serial2.println("?sleep=true");
+    sendMessage("?sleep=true");
     delay(5000);
     esp_deep_sleep_start();
 }
@@ -280,13 +317,10 @@ void startSleepTimer()
     startSleepTimer(RESET_TIME);
 }
 
-// SETUP
 void setup()
 {
-    // SETUP SERIAL
-    Serial.begin(7200);
-    Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
-    delay(1500);
+    // Init Serial Monitor
+    Serial.begin(9600);
 
     // SETUP PINS
     pinMode(LED_CORRECT, OUTPUT);
@@ -294,6 +328,9 @@ void setup()
     pinMode(LED_SCORE_1, OUTPUT);
     pinMode(LED_SCORE_2, OUTPUT);
     pinMode(LED_SCORE_3, OUTPUT);
+
+    // Set device as a Wi-Fi Station
+    WiFi.mode(WIFI_STA);
 
     // SETUP WIFI
     WiFi.softAP(ssid, password);
@@ -306,6 +343,34 @@ void setup()
     // SETUP SPIFFS
     SPIFFS.begin(true);
 
+    // Init ESP-NOW
+    if (esp_now_init() != ESP_OK)
+    {
+        Serial.println("Error initializing ESP-NOW");
+        return;
+    }
+
+    // Once ESPNow is successfully Init, we will register for Send CB to
+    // get the status of Trasnmitted packet
+    esp_now_register_send_cb(OnDataSent);
+
+    // Once ESPNow is successfully Init, we will register for recv CB to
+    // get recv packer info
+    esp_now_register_recv_cb(OnDataRecv);
+
+    // Register peer
+    esp_now_peer_info_t peerInfo;
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+
+    // Add peer
+    if (esp_now_add_peer(&peerInfo) != ESP_OK)
+    {
+        Serial.println("Failed to add peer");
+        return;
+    }
+
     // SETUP LOGIC
     resetLogic();
     updateScoreLEDs();
@@ -315,28 +380,16 @@ void setup()
     esp_sleep_enable_touchpad_wakeup();
 
     Serial.println("Master setup done.");
-    Serial2.println("?reset=true");
+    // Serial2.println("?reset=true");
+    sendMessage("?reset=true");
 
     startSleepTimer();
+    
 }
 
-// MAIN LOOP
 void loop()
 {
-    /*if (Serial.available())
-    {
-        serial = Serial.readString();
-        Serial.println(serial);
-    }*/
-
-    if (Serial2.available())
-    {
-        serial = Serial2.readString();
-        Serial.println(serial);
-        startSleepTimer();
-    }
-
-    if (serial.startsWith("?reset=true"))
+     if (serial.startsWith("?reset=true"))
         resetLogic();
     else if (serial.startsWith("?sleep=true"))
     {
@@ -356,7 +409,6 @@ void loop()
                 String header = client.readString();
                 if (header.endsWith("\n"))
                 {
-                    // MASTER ROUTES
                     if (header.startsWith(ROUTE_INDEX_JS))
                     {
                         validation = randomKey(8);
@@ -393,14 +445,16 @@ void loop()
                             respond(validation, "text/plain");
                             page = Page::QUESTIONS;
                             Serial.println("?valid=true");
-                            Serial2.println("?valid=true");
+                            // Serial2.println("?valid=true");
+                            sendMessage("?valid=true");
                             serial = "";
                         }
                         else if (!serial.isEmpty())
                         {
                             respond("", "text/plain");
                             Serial.println("?valid=false");
-                            Serial2.println("?valid=false");
+                            // Serial2.println("?valid=false");
+                            sendMessage("?valid=false");
                             serial = "";
                         }
                         else
@@ -420,7 +474,8 @@ void loop()
                             String selectedQuestion = header.substring(index, index + 15);
                             question = selectedQuestion.substring(10, 15);
                             Serial.println(selectedQuestion);
-                            Serial2.println(selectedQuestion);
+                            // Serial2.println(selectedQuestion);
+                            sendMessage(selectedQuestion);
                             serial = "";
                             digitalWrite(LED_CORRECT, LOW);
                             digitalWrite(LED_WRONG, LOW);
@@ -448,7 +503,8 @@ void loop()
                                 correct = "false";
                             }
                             Serial.println("?correct=" + correct);
-                            Serial2.println("?correct=" + correct);
+                            // Serial2.println("?correct=" + correct);
+                            sendMessage("?correct=" + correct);
                             serial = "";
                             if (scoreMaster == 3 || scorePlayer == 3)
                                 page = Page::ENDSCREEN;
@@ -466,73 +522,20 @@ void loop()
                         respond(masterStyle, "text/css");
                         break;
                     }
-                    // FORM ROUTES
-                    else if (header.startsWith(ROUTE_FORM_JS))
-                    {
-                        validation = randomKey(8);
-                        String script = String(formIndexJS);
-                        script.replace("$VALIDATION", validation);
-                        respond(script, "application/javascript");
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_DOWNLOAD_JS))
-                    {
-                        validation = randomKey(8);
-                        String script = String(formDownloadJS);
-                        script.replace("$VALIDATION", validation);
-                        script.replace("$DOWNLOAD", download);
-                        respond(script, "application/javascript");
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_FORM))
-                    {
-                        respond(getPage(formIndex, "Frage vorschlagen", "", "form.js", "form.css"));
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_FORM_SUBMIT))
-                    {
-                        int start = header.indexOf("?data=") + 6;
-                        int end = header.indexOf("&end=true");
+                    else if (header.startsWith(ROUTE_FORM_JS)) {
 
-                        String data = header.substring(start, end);
-                        //Serial.println(data);
-
-                        bool first = !SPIFFS.exists(QUESTIONS_JSON);
-                        File file = SPIFFS.open(QUESTIONS_JSON, FILE_APPEND);
-
-                        if (first)
-                            file.print("%5B");
-                        if (!first)
-                            file.print("%2C");
-                        file.print(data);
-                        file.close();
-
-                        respond(validation, "text/plain");
-                        break;
                     }
-                    else if (header.startsWith(ROUTE_FORM_GET))
-                    {
-                        download = "";
-                        File file = SPIFFS.open(QUESTIONS_JSON);
-                        while (file.available())
-                            download += char(file.read());
-                        file.close();
-                        if (download.isEmpty())
-                            download += "%5B";
-                        download += "%5D";
-                        respond(getPage("", "Fragen Download", "", "download.js", "form.css"));
-                        break;
+                    else if (header.startsWith(ROUTE_FORM)) {
+
                     }
-                    else if (header.startsWith(ROUTE_FORM_CLEAR))
-                    {
-                        SPIFFS.remove(QUESTIONS_JSON);
-                        respond(validation, "text/plain");
-                        break;
+                    else if (header.startsWith(ROUTE_FORM_SUBMIT)) {
+
                     }
-                    else if (header.startsWith(ROUTE_FORM_CSS))
-                    {
-                        respond(formStyle, "text/css");
-                        break;
+                    else if (header.startsWith(ROUTE_FORM_GET)) {
+
+                    }
+                    else if (header.startsWith(ROUTE_FORM_CLEAR)) {
+
                     }
 
                     // PAGES
@@ -568,10 +571,12 @@ void loop()
 
         client.stop();
     }
-
-    updateScoreLEDs();
+    
+    // updateScoreLEDs();
     updateSleepTimer();
 
     // UPDATE LOOP COUNT
     loopCount++;
+    // sendMessage("TEST");
+    // delay(2000);
 }
