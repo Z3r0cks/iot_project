@@ -356,9 +356,15 @@ void setup()
     peerInfo.channel = 0;
     peerInfo.encrypt = false;
 
-    // Add peer
-    if (esp_now_add_peer(&peerInfo) != ESP_OK)
-        deepSleep("Failed to add peer.");
+    // ADD PEER LOOP 
+    byte retry = 10;
+    while (esp_now_add_peer(&peerInfo) != ESP_OK)
+    {
+        if (retry == 0)
+            deepSleep("Failed to add peer.");
+        retry--;
+        delay(1000);
+    }
 
     // SETUP LOGIC
     resetLogic();
