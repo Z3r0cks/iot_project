@@ -276,6 +276,22 @@ void deepSleep()
     deepSleep("");
 }
 
+// SLEEP TIMER
+void updateSleepTimer()
+{
+    if (sleepTimerEnabled)
+    {
+        unsigned long time = millis();
+        sleepTimer -= time - lastTime;
+        lastTime = time;
+        if (sleepTimer <= 0)
+        {
+            resetLogic();
+            deepSleep();
+        }
+    }
+}
+
 void startSleepTimer(long timeout)
 {
     sleepTimer = timeout;
@@ -534,6 +550,4 @@ void loop()
 
     // UPDATE LOOP COUNT
     loopCount++;
-    // sendMessage("TEST");
-    // delay(2000);
 }
