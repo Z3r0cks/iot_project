@@ -16,21 +16,6 @@
 #define LED_SCORE_3 14 //old 27
 #define TOUCH_PIN 2
 
-// PAGES
-enum Page
-{
-    INDEX,
-    QUESTIONS,
-    SOLUTION,
-    ENDSCREEN
-};
-
-// GLOBAL VARS
-Page page;
-String key, validation, serial, question;
-bool lockQuestion;
-int scoreMaster, scorePlayer;
-
 // ROUTES QUIZ
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_QUESTIONS_JS "GET /questions.js"
@@ -43,9 +28,29 @@ int scoreMaster, scorePlayer;
 // ROUTES FORM
 #define ROUTE_FORM "GET /suggest-question"
 #define ROUTE_FORM_JS "GET /form.js"
-#define ROUTE_FORM_SUBMIT "POST /submit-question"
+#define ROUTE_FORM_SUBMIT "GET /submit-question"
 #define ROUTE_FORM_GET "GET /download-questions"
+#define ROUTE_DOWNLOAD_JS "GET /download.js"
 #define ROUTE_FORM_CLEAR "GET /clear-questions"
+#define ROUTE_FORM_CSS "GET /form.css"
+
+// FILE PATHS
+const String QUESTIONS_JSON = "/questions.json";
+
+// PAGES
+enum Page
+{
+    INDEX,
+    QUESTIONS,
+    SOLUTION,
+    ENDSCREEN
+};
+
+// GLOBAL VARS
+Page page;
+String key, validation, serial, question, download;
+bool lockQuestion;
+int scoreMaster, scorePlayer;
 
 // DURATIONS
 #define RESET_TIME 300000
@@ -198,19 +203,25 @@ unsigned long randomKey(int positions)
 }
 
 // GET PAGE
-String getPage(String raw, String title, String bodyClass, String script)
+String getPage(String raw, String title, String bodyClass, String script, String style)
 {
     String html = String(masterPage);
     html.replace("$TITLE", title);
     if (!script.isEmpty())
         script = "<script src=\"" + script + "\" defer></script>";
     html.replace("$SCRIPT", script);
+    html.replace("$STYLE", style);
     String page = String(raw);
     page.replace("$SCORE_PLAYER", String(scorePlayer));
     page.replace("$SCORE_MASTER", String(scoreMaster));
     page.replace("$CLASS", bodyClass);
     html.replace("$BODY", page);
     return html;
+}
+
+String getPage(String raw, String title, String bodyClass, String script)
+{
+    return getPage(raw, title, bodyClass, script, "style.css");
 }
 
 // SCORE LEDS
@@ -495,20 +506,74 @@ void loop()
                         respond(masterStyle, "text/css");
                         break;
                     }
+
+                    // FORM ROUTES
                     else if (header.startsWith(ROUTE_FORM_JS))
                     {
+                        validation = randomKey(8);
+                        String script = String(formIndexJS);
+                        script.replace("$VALIDATION", validation);
+                        respond(script, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_DOWNLOAD_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(formDownloadJS);
+                        script.replace("$VALIDATION", validation);
+                        script.replace("$DOWNLOAD", download);
+                        respond(script, "application/javascript");
+                        break;
                     }
                     else if (header.startsWith(ROUTE_FORM))
                     {
+                        respond(getPage(formIndex, "Frage vorschlagen", "", "form.js", "form.css"));
+                        break;
                     }
                     else if (header.startsWith(ROUTE_FORM_SUBMIT))
                     {
+                        int start = header.indexOf("?data=") + 6;
+                        int end = header.indexOf("&end=true");
+
+                        String data = header.substring(start, end);
+                        //Serial.println(data);
+
+                        bool first = !SPIFFS.exists(QUESTIONS_JSON);
+                        File file = SPIFFS.open(QUESTIONS_JSON, FILE_APPEND);
+
+                        if (first)
+                            file.print("%5B");
+                        if (!first)
+                            file.print("%2C");
+                        file.print(data);
+                        file.close();
+
+                        respond(validation, "text/plain");
+                        break;
                     }
                     else if (header.startsWith(ROUTE_FORM_GET))
                     {
+                        download = "";
+                        File file = SPIFFS.open(QUESTIONS_JSON);
+                        while (file.available())
+                            download += char(file.read());
+                        file.close();
+                        if (download.isEmpty())
+                            download += "%5B";
+                        download += "%5D";
+                        respond(getPage("", "Fragen Download", "", "download.js", "form.css"));
+                        break;
                     }
                     else if (header.startsWith(ROUTE_FORM_CLEAR))
                     {
+                        SPIFFS.remove(QUESTIONS_JSON);
+                        respond(validation, "text/plain");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_FORM_CSS))
+                    {
+                        respond(formStyle, "text/css");
+                        break;
                     }
 
                     // PAGES
@@ -545,7 +610,7 @@ void loop()
         client.stop();
     }
 
-    // updateScoreLEDs();
+    updateScoreLEDs();
     updateSleepTimer();
 
     // UPDATE LOOP COUNT
