@@ -1,24 +1,37 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
+
+#include <esp_now.h>
 #include <WiFi.h>
+
+#include <SPIFFS.h>
 #include <Pages.h>
 #include <Scripts.h>
 #include <Styles.h>
 
 // PIN LAYOUT
-#define RXD 16
-#define TXD 17
-#define LED_CORRECT 23
-#define LED_WRONG 22
+#define LED_CORRECT 22
+#define LED_WRONG 23
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
 #define LED_SCORE_3 14 //old 27
 #define TOUCH_PIN 2
 
-// TOUCH
-#define TOUCH_THRESHOLD 40
+// PAGES
+enum Page
+{
+  INDEX,
+  QUESTION,
+  SOLUTION,
+  ENDSCREEN
+};
 
-// ROUTES
+// GLOBAL VARS
+Page page;
+String key, validation, serial, question, correct, answer;
+bool lockAnswer;
+int scoreMaster, scorePlayer;
+
+// ROUTES QUIZ
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_SOLUTION_JS "GET /solution.js"
 #define ROUTE_QUESTION_JS "GET /question.js"
@@ -29,31 +42,19 @@
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
+// ROUTES FORM
+#define ROUTE_FORM "GET /suggest-question"
+#define ROUTE_FORM_JS "GET /form.js"
+#define ROUTE_FORM_SUBMIT "POST /submit-question"
+#define ROUTE_FORM_GET "GET /download-questions"
+#define ROUTE_FORM_CLEAR "GET /clear-questions"
+
 // DURATIONS
 #define RESET_TIME 300000
 #define SLEEP_TIME 10000
 
-// PAGES
-enum Page
-{
-    INDEX,
-    SOLUTION,
-    QUESTION,
-    ENDSCREEN
-};
-
-// WIFI SETTINGS
-const char *ssid = "Nature Quiz (Player)";
-const char *password = NULL;
-
-WiFiClient client;
-WiFiServer server(80);
-
-// GLOBAL VARS
-Page page;
-String key, validation, serial, question, answer, correct;
-bool lockAnswer;
-int scoreMaster, scorePlayer;
+// TOUCH
+#define TOUCH_THRESHOLD 40
 
 // TIMER VARS
 unsigned long lastTime;
@@ -64,22 +65,86 @@ unsigned long loopCount;
 // QUESTIONS
 struct Question
 {
-    String id;
-    String category;
-    String text;
-    String *answers;
-    String explanation;
-    String correct;
-    Question(String id, String category, String text, String a, String b, String c, String d, String explanation, String correct)
-    {
-        this->id = id;
-        this->category = category;
-        this->text = text;
-        this->answers = new String[4]{a, b, c, d};
-        this->explanation = explanation;
-        this->correct = correct;
-    }
+  String id;
+  String category;
+  String text;
+  String *answers;
+  String explanation;
+  String correct;
+  Question(String id, String category, String text, String a, String b, String c, String d, String explanation, String correct)
+  {
+    this->id = id;
+    this->category = category;
+    this->text = text;
+    this->answers = new String[4]{a, b, c, d};
+    this->explanation = explanation;
+    this->correct = correct;
+  }
 };
+
+// WIFI SETTINGS
+const char *ssid = "Nature Quiz (Player)";
+const char *password = NULL;
+
+WiFiClient client;
+WiFiServer server(80);
+String header;
+
+// REPLACE WITH YOUR RECEIVER MAC Address
+uint8_t broadcastAddress[] = {0xB8, 0xF0, 0x09, 0xCC, 0x88, 0x84};
+
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message
+{
+  // String message;
+  char message[32];
+} struct_message;
+
+// Create a struct_message called myData
+struct_message sendData;
+
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+//##################### RECIEVE ######################s
+// Create a struct_message to recieve data
+struct_message recieveData;
+
+// callback function that will be executed when data is received
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
+  memcpy(&recieveData, incomingData, sizeof(recieveData));
+  Serial.print("Bytes received: ");
+  Serial.println(len);
+  Serial.print("Nachricht: ");
+  Serial.println(recieveData.message);
+  serial = recieveData.message;
+}
+
+void sendMessage(String message)
+{
+  // Set values to send
+  // sendData.message = message;
+  Serial.println("Message " + message);
+  stpcpy(sendData.message, message.c_str());
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sendData, sizeof(sendData));
+  Serial.println(result);
+  if (result == ESP_OK)
+  {
+    Serial.println("Sent with success");
+  }
+  else
+  {
+    Serial.println("Error sending the data");
+  }
+}
 
 const Question questions[] = {
     Question("01_01", "1", "Was macht den Schwarzwald so bienenfreundlich?", "Wegen der Höhenlage", "Wegen dem vielen Schnee", "Es wächst viel Löwenzahn in der Gegend", "Wegen der guten Luft", "Der Löwenzahn blüht von April bis Juni und hat auf die Entwicklung von Bienenvölkern großen Einfluss.", "C"),
@@ -95,407 +160,424 @@ const Question questions[] = {
     Question("04_04", "4", "Wieso wurde die Linachtalsperre ursprünglich gebaut?", "Zum Schutz vor Überschwemmungen nach einer Schneeschmelze", "Zur Stromgewinnung", "Damit ein Badesee entsteht", "Damit eine Örtliche Fischzucht entstehen kann", "Die Linachtalsperre wurde von 1922-1925 gebaut. <br> Bis 1969 wurde sie, wie ursprünglich geplant, zur örtlichen Stromgewinnung genutzt. <br> Aus Sicherheitsgründen wurde 1988 das Wasser abgelassen. <br> Seit ihrer Renovierung 2007 staut sie wieder das Wasser der Linach.", "B"),
 };
 
+String getAnswer(String id)
+{
+  for (const Question &quest : questions)
+  {
+    if (quest.id.equals(id))
+      return quest.correct;
+  }
+  return "";
+}
+
 String questionToJSON(Question quest)
 {
-    String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\"}";
-    json.replace("$ID", quest.id);
-    json.replace("$TEXT", quest.text);
-    json.replace("$CATEGORY", quest.category);
-    json.replace("$ANSWER_A", quest.answers[0]);
-    json.replace("$ANSWER_B", quest.answers[1]);
-    json.replace("$ANSWER_C", quest.answers[2]);
-    json.replace("$ANSWER_D", quest.answers[3]);
-    json.replace("$EXPLANATION", quest.explanation);
-    return json;
+  String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\", \"correct\":\"$CORRECT\"}";
+  json.replace("$ID", quest.id);
+  json.replace("$TEXT", quest.text);
+  json.replace("$CATEGORY", quest.category);
+  json.replace("$ANSWER_A", quest.answers[0]);
+  json.replace("$ANSWER_B", quest.answers[1]);
+  json.replace("$ANSWER_C", quest.answers[2]);
+  json.replace("$ANSWER_D", quest.answers[3]);
+  json.replace("$EXPLANATION", quest.explanation);
+  json.replace("$CORRECT", quest.correct);
+  return json;
 }
 
 String getQuestion(String id)
 {
-    for (const Question &quest : questions)
+  for (const Question &quest : questions)
+  {
+    if (quest.id.equals(id))
     {
-        if (quest.id.equals(id))
-        {
-            correct = quest.correct;
-            return questionToJSON(quest);
-        }
+      correct = quest.correct;
+      return questionToJSON(quest);
     }
-    return "";
+  }
+  return "";
+}
+
+String questionsToJSON()
+{
+  String json = "{";
+  for (const Question &quest : questions)
+    json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
+  return json + "}";
 }
 
 // HTTP RESPONSES
 void respond(String data, String contentType)
 {
-    client.println("HTTP/1.1 200 OK");
-    client.print("Content-type: ");
-    client.println(contentType);
-    client.println("Connection: close");
-    client.println();
-    if (!data.isEmpty())
-        client.println(data);
+  client.println("HTTP/1.1 200 OK");
+  client.print("Content-type: ");
+  client.println(contentType);
+  client.println("Connection: close");
+  client.println();
+  if (!data.isEmpty())
+    client.println(data);
 }
 
 void respond(String html)
 {
-    respond(html, "text/html");
-}
-
-void error(String data)
-{
-    client.println("HTTP/1.1 404 Not Found");
-    client.println("Content-type: text/html");
-    client.println("Connection: close");
-    client.println();
-    if (!data.isEmpty())
-        client.println(data);
+  respond(html, "text/html");
 }
 
 // RANDOM KEY GENERATOR
 unsigned long randomKey(int positions)
 {
-    unsigned long upper = pow(10, positions);
-    unsigned long lower = pow(10, positions - 1);
-    return (millis() % (upper - lower)) + lower;
+  unsigned long upper = pow(10, positions);
+  unsigned long lower = pow(10, positions - 1);
+  return (millis() % (upper - lower)) + lower;
 }
 
 // GET PAGE
 String getPage(String raw, String title, String bodyClass, String script)
 {
-    String html = String(playerPage);
-    html.replace("$TITLE", title);
-    if (!script.isEmpty())
-        script = "<script src=\"" + script + "\" defer></script>";
-    html.replace("$SCRIPT", script);
-    String page = String(raw);
-    page.replace("$SCORE_PLAYER", String(scorePlayer));
-    page.replace("$SCORE_MASTER", String(scoreMaster));
-    page.replace("$CLASS", bodyClass);
-    html.replace("$BODY", page);
-    return html;
+  String html = String(playerPage);
+  html.replace("$TITLE", title);
+  if (!script.isEmpty())
+    script = "<script src=\"" + script + "\" defer></script>";
+  html.replace("$SCRIPT", script);
+  String page = String(raw);
+  page.replace("$SCORE_PLAYER", String(scorePlayer));
+  page.replace("$SCORE_MASTER", String(scoreMaster));
+  page.replace("$CLASS", bodyClass);
+  html.replace("$BODY", page);
+  return html;
 }
 
 // SCORE LEDS
 void updateScoreLEDs()
 {
-    if (scorePlayer == 0)
-    {
-        digitalWrite(LED_SCORE_1, LOW);
-        digitalWrite(LED_SCORE_2, LOW);
-        digitalWrite(LED_SCORE_3, LOW);
-    }
-    else if (scorePlayer == 1)
-    {
-        digitalWrite(LED_SCORE_1, HIGH);
-        digitalWrite(LED_SCORE_2, LOW);
-        digitalWrite(LED_SCORE_3, LOW);
-    }
-    else if (scorePlayer == 2)
-    {
-        digitalWrite(LED_SCORE_1, HIGH);
-        digitalWrite(LED_SCORE_2, HIGH);
-        digitalWrite(LED_SCORE_3, LOW);
-    }
-    else if (scorePlayer == 3)
-    {
-        digitalWrite(LED_SCORE_1, HIGH);
-        digitalWrite(LED_SCORE_2, HIGH);
-        digitalWrite(LED_SCORE_3, HIGH);
-    }
+  if (scorePlayer == 0)
+  {
+    digitalWrite(LED_SCORE_1, LOW);
+    digitalWrite(LED_SCORE_2, LOW);
+    digitalWrite(LED_SCORE_3, LOW);
+  }
+  else if (scorePlayer == 1)
+  {
+    digitalWrite(LED_SCORE_1, HIGH);
+    digitalWrite(LED_SCORE_2, LOW);
+    digitalWrite(LED_SCORE_3, LOW);
+  }
+  else if (scorePlayer == 2)
+  {
+    digitalWrite(LED_SCORE_1, HIGH);
+    digitalWrite(LED_SCORE_2, HIGH);
+    digitalWrite(LED_SCORE_3, LOW);
+  }
+  else if (scorePlayer == 3)
+  {
+    digitalWrite(LED_SCORE_1, HIGH);
+    digitalWrite(LED_SCORE_2, HIGH);
+    digitalWrite(LED_SCORE_3, HIGH);
+  }
 }
 
 // GAME LOGIC
 void resetLogic()
 {
-    sleepTimerEnabled = false;
-    sleepTimer = RESET_TIME;
-    loopCount = 0;
-    page = Page::INDEX;
-    scoreMaster = 0;
-    scorePlayer = 0;
-    question = "";
-    answer = "";
-    correct = "";
-    lockAnswer = false;
-    digitalWrite(LED_CORRECT, LOW);
-    digitalWrite(LED_WRONG, LOW);
+  sleepTimerEnabled = false;
+  sleepTimer = RESET_TIME;
+  loopCount = 0;
+  page = Page::INDEX;
+  scoreMaster = 0;
+  scorePlayer = 0;
+  lockAnswer = false;
+  digitalWrite(LED_CORRECT, LOW);
+  digitalWrite(LED_WRONG, LOW);
 }
 
 // DEEP SLEEP
 void deepSleep()
 {
-    Serial.println("Going to sleep.");
-    Serial2.println("?sleep=true");
-    delay(5000);
-    esp_deep_sleep_start();
+  Serial.println("Going to sleep.");
+  // Serial2.println("?sleep=true");
+  sendMessage("?sleep=true");
+  delay(5000);
+  esp_deep_sleep_start();
 }
 
 // SLEEP TIMER
 void updateSleepTimer()
 {
-    if (sleepTimerEnabled)
+  if (sleepTimerEnabled)
+  {
+    unsigned long time = millis();
+    sleepTimer -= time - lastTime;
+    lastTime = time;
+    if (sleepTimer <= 0)
     {
-        unsigned long time = millis();
-        sleepTimer -= time - lastTime;
-        lastTime = time;
-        if (sleepTimer <= 0)
-        {
-            resetLogic();
-            deepSleep();
-        }
+      resetLogic();
+      deepSleep();
     }
+  }
 }
 
 void startSleepTimer(long timeout)
 {
-    sleepTimer = timeout;
-    lastTime = millis();
-    sleepTimerEnabled = true;
+  sleepTimer = timeout;
+  lastTime = millis();
+  sleepTimerEnabled = true;
 }
 
 void startSleepTimer()
 {
-    startSleepTimer(RESET_TIME);
+  startSleepTimer(RESET_TIME);
 }
 
-// CALLBACK
-void callback()
-{
-    // Do Nothing
-}
-
-// SETUP
 void setup()
 {
-    // SETUP SERIAL
-    Serial.begin(7200);
-    Serial2.begin(9600, SERIAL_8N1, RXD, TXD);
-    delay(1000);
+  // Init Serial Monitor
+  Serial.begin(9600);
 
-    // SETUP PINS
-    pinMode(LED_CORRECT, OUTPUT);
-    pinMode(LED_WRONG, OUTPUT);
-    pinMode(LED_SCORE_1, OUTPUT);
-    pinMode(LED_SCORE_2, OUTPUT);
-    pinMode(LED_SCORE_3, OUTPUT);
+  // SETUP PINS
+  pinMode(LED_CORRECT, OUTPUT);
+  pinMode(LED_WRONG, OUTPUT);
+  pinMode(LED_SCORE_1, OUTPUT);
+  pinMode(LED_SCORE_2, OUTPUT);
+  pinMode(LED_SCORE_3, OUTPUT);
 
-    // SETUP WIFI
-    WiFi.softAP(ssid, password);
-    IPAddress ip = WiFi.softAPIP();
-    server.begin();
-    Serial.print("Server running at ");
-    Serial.print(ip);
-    Serial.println(".");
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
 
-    // SETUP LOGIC
-    resetLogic();
-    updateScoreLEDs();
+  // SETUP WIFI
+  WiFi.softAP(ssid, password);
+  IPAddress ip = WiFi.softAPIP();
+  server.begin();
+  Serial.print("Server running at ");
+  Serial.print(ip);
+  Serial.println(".");
 
-    // SETUP DEEP SLEEP
-    touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
-    esp_sleep_enable_touchpad_wakeup();
+  // SETUP SPIFFS
+  SPIFFS.begin(true);
 
-    Serial.println("Player setup done.");
-    Serial2.println("?reset=true");
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
 
-    startSleepTimer();
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent);
+
+  // Once ESPNow is successfully Init, we will register for recv CB to
+  // get recv packer info
+  esp_now_register_recv_cb(OnDataRecv);
+
+  // Register peer
+  esp_now_peer_info_t peerInfo;
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
+    Serial.println("Failed to add peer");
+    return;
+  }
+
+  // SETUP LOGIC
+  resetLogic();
+  updateScoreLEDs();
+
+  // SETUP DEEP SLEEP
+  touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
+  esp_sleep_enable_touchpad_wakeup();
+
+  Serial.println("Master setup done.");
+  // Serial2.println("?reset=true");
+  sendMessage("?reset=true");
+
+  startSleepTimer();
 }
 
-// MAIN LOOP
 void loop()
 {
-    /*if (Serial.available())
-    {
-        serial = Serial.readString();
-        Serial.println(serial);
-    }*/
 
-    if (Serial2.available())
+  client = server.available();
+
+  if (client)
+  {
+    while (client.connected())
     {
-        serial = Serial2.readString();
-        Serial.println(serial);
+      if (client.available())
+      {
         startSleepTimer();
-    }
-
-    if (serial.startsWith("?reset=true"))
-        resetLogic();
-    else if (serial.startsWith("?sleep=true"))
-    {
-        resetLogic();
-        deepSleep();
-    }
-
-    client = server.available();
-
-    if (client)
-    {
-        while (client.connected())
+        String header = client.readString();
+        
+        if (header.endsWith("\n"))
         {
-            if (client.available())
+          if (header.startsWith(ROUTE_INDEX_JS))
+          {
+            validation = randomKey(8);
+            String script = String(playerIndexJS);
+            script.replace("$VALIDATION", validation);
+            respond(script, "application/javascript");
+            break;
+          }
+          else if (header.startsWith(ROUTE_SOLUTION_JS))
+          {
+            validation = randomKey(8);
+            String script = String(playerSolutionJS);
+            script.replace("$VALIDATION", validation);
+            script.replace("$ANSWER", answer);
+            script.replace("$CORRECT", correct);
+            script.replace("$QUESTION", getQuestion(question));
+            respond(script, "application/javascript");
+            break;
+          }
+          else if (header.startsWith(ROUTE_QUESTION_JS))
+          {
+            validation = randomKey(8);
+            String script = String(playerQuestionJS);
+            script.replace("$VALIDATION", validation);
+            script.replace("$QUESTION", getQuestion(question));
+            respond(script, "application/javascript");
+            break;
+          }
+          else if (header.startsWith(ROUTE_SUBMIT_KEY))
+          {
+            int index = strlen(ROUTE_SUBMIT_KEY);
+            respond(validation, "text/plain");
+            String key = header.substring(index, index + 9);
+            Serial.println(key);
+            // Serial2.println(key);
+            sendMessage(key);
+            serial = "";
+            break;
+          }
+          else if (header.startsWith(ROUTE_VALIDATE_KEY))
+          {
+            if (serial.startsWith("?valid=true"))
             {
-                startSleepTimer();
-                String header = client.readString();
-                if (header.endsWith("\n"))
-                {
-                    if (header.startsWith(ROUTE_INDEX_JS))
-                    {
-                        validation = randomKey(8);
-                        String script = String(playerIndexJS);
-                        script.replace("$VALIDATION", validation);
-                        respond(script, "application/javascript");
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_SOLUTION_JS))
-                    {
-                        validation = randomKey(8);
-                        String script = String(playerSolutionJS);
-                        script.replace("$VALIDATION", validation);
-                        script.replace("$ANSWER", answer);
-                        script.replace("$CORRECT", correct);
-                        script.replace("$QUESTION", getQuestion(question));
-                        respond(script, "application/javascript");
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_QUESTION_JS))
-                    {
-                        validation = randomKey(8);
-                        String script = String(playerQuestionJS);
-                        script.replace("$VALIDATION", validation);
-                        script.replace("$QUESTION", getQuestion(question));
-                        respond(script, "application/javascript");
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_SUBMIT_KEY))
-                    {
-                        int index = strlen(ROUTE_SUBMIT_KEY);
-                        respond(validation, "text/plain");
-                        String key = header.substring(index, index + 9);
-                        Serial.println(key);
-                        Serial2.println(key);
-                        serial = "";
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_VALIDATE_KEY))
-                    {
-                        if (serial.startsWith("?valid=true"))
-                        {
-                            respond(validation, "text/plain");
-                            page = Page::SOLUTION;
-                        }
-                        else if (serial.startsWith("?valid=false"))
-                        {
-                            respond("INVALID", "text/plain");
-                        }
-                        else
-                        {
-                            respond("", "text/plain");
-                        }
-                        serial = "";
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_AWAIT_QUESTION))
-                    {
-                        if (serial.startsWith("?question="))
-                        {
-                            respond(validation, "text/plain");
-                            page = Page::QUESTION;
-                            question = serial.substring(10, 15);
-                        }
-                        else
-                        {
-                            respond("", "text/plain");
-                        }
-                        serial = "";
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_SUBMIT_ANSWER))
-                    {
-                        if (!lockAnswer)
-                        {
-                            lockAnswer = true;
-                            int index = strlen(ROUTE_SUBMIT_ANSWER);
-                            respond(validation, "text/plain");
-                            String selectedAnswer = header.substring(index, index + 9);
-                            answer = selectedAnswer.substring(8, 9);
-                            Serial.println(selectedAnswer);
-                            Serial2.println(selectedAnswer);
-                            serial = "";
-                        }
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
-                    {
-                        if (serial.startsWith("?correct="))
-                        {
-                            if (serial.startsWith("?correct=true"))
-                            {
-                                digitalWrite(LED_CORRECT, HIGH);
-                                scorePlayer++;
-                            }
-                            else if (serial.startsWith("?correct=false"))
-                            {
-                                digitalWrite(LED_WRONG, HIGH);
-                                scoreMaster++;
-                            }
-                            respond(validation, "text/plain");
-                            if (scorePlayer == 3 || scoreMaster == 3)
-                                page = Page::ENDSCREEN;
-                            else
-                                page = Page::SOLUTION;
-                        }
-                        else
-                        {
-                            respond("", "text/plain");
-                        }
-                        serial = "";
-                        break;
-                    }
-                    else if (header.startsWith(ROUTE_STYLE_CSS))
-                    {
-                        respond(playerStyle, "text/css");
-                        break;
-                    }
-
-                    // PAGES
-                    if (page == Page::ENDSCREEN)
-                    {
-                        if (scorePlayer == 3)
-                        {
-                            respond(getPage(playerVictory, "Quiz gewonnen", "victoryBody", ""));
-                        }
-                        else
-                        {
-                            respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
-                        }
-                        startSleepTimer(SLEEP_TIME);
-                    }
-                    else if (page == Page::SOLUTION)
-                    {
-                        lockAnswer = false;
-                        String title = "Auflösung";
-                        if (question.isEmpty())
-                            title = "Warte auf Frage";
-                        respond(getPage(playerSolution, title, "solutionBody", "solution.js"));
-                    }
-                    else if (page == Page::QUESTION)
-                    {
-                        respond(getPage(playerQuestion, "Frage", "questionBody", "question.js"));
-                        digitalWrite(LED_CORRECT, LOW);
-                        digitalWrite(LED_WRONG, LOW);
-                    }
-                    else if (page == Page::INDEX)
-                    {
-                        respond(getPage(playerIndex, "Code", "indexBody", "index.js"));
-                    }
-                    break;
-                }
+              respond(validation, "text/plain");
+              page = Page::SOLUTION;
             }
-        }
+            else if (serial.startsWith("?valid=false"))
+            {
+              respond("INVALID", "text/plain");
+            }
+            else
+            {
+              respond("", "text/plain");
+            }
+            serial = "";
+            break;
+          }
+          else if (header.startsWith(ROUTE_AWAIT_QUESTION))
+          {
+            if (serial.startsWith("?question="))
+            {
+              respond(validation, "text/plain");
+              page = Page::QUESTION;
+              question = serial.substring(10, 15);
+            }
+            else
+            {
+              respond("", "text/plain");
+            }
+            serial = "";
+            break;
+          }
+          else if (header.startsWith(ROUTE_SUBMIT_ANSWER))
+          {
+            if (!lockAnswer)
+            {
+              lockAnswer = true;
+              int index = strlen(ROUTE_SUBMIT_ANSWER);
+              respond(validation, "text/plain");
+              String selectedAnswer = header.substring(index, index + 9);
+              answer = selectedAnswer.substring(8, 9);
+              Serial.println(selectedAnswer);
+              // Serial2.println(selectedAnswer);
+              sendMessage(selectedAnswer);
+              serial = "";
+            }
+            break;
+          }
+          else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
+          {
+            if (serial.startsWith("?correct="))
+            {
+              if (serial.startsWith("?correct=true"))
+              {
+                digitalWrite(LED_CORRECT, HIGH);
+                scorePlayer++;
+              }
+              else if (serial.startsWith("?correct=false"))
+              {
+                digitalWrite(LED_WRONG, HIGH);
+                scoreMaster++;
+              }
+              respond(validation, "text/plain");
+              if (scorePlayer == 3 || scoreMaster == 3)
+                page = Page::ENDSCREEN;
+              else
+                page = Page::SOLUTION;
+            }
+            else
+            {
+              respond("", "text/plain");
+            }
+            serial = "";
+            break;
+          }
+          else if (header.startsWith(ROUTE_STYLE_CSS))
+          {
+            respond(playerStyle, "text/css");
+            break;
+          }
 
-        client.stop();
+          // PAGES
+          if (page == Page::ENDSCREEN)
+          {
+            if (scorePlayer == 3)
+            {
+              respond(getPage(playerVictory, "Quiz gewonnen", "victoryBody", ""));
+            }
+            else
+            {
+              respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
+            }
+            startSleepTimer(SLEEP_TIME);
+          }
+          else if (page == Page::SOLUTION)
+          {
+            lockAnswer = false;
+            String title = "Auflösung";
+            if (question.isEmpty())
+              title = "Warte auf Frage";
+            respond(getPage(playerSolution, title, "solutionBody", "solution.js"));
+          }
+          else if (page == Page::QUESTION)
+          {
+            respond(getPage(playerQuestion, "Frage", "questionBody", "question.js"));
+            digitalWrite(LED_CORRECT, LOW);
+            digitalWrite(LED_WRONG, LOW);
+          }
+          else if (page == Page::INDEX)
+          {
+            respond(getPage(playerIndex, "Code", "indexBody", "index.js"));
+          }
+          break;
+        }
+      }
     }
 
-    updateScoreLEDs();
-    updateSleepTimer();
+    client.stop();
+  }
 
-    // UPDATE LOOP COUNT
-    loopCount++;
+  updateScoreLEDs();
+  updateSleepTimer();
+
+  // UPDATE LOOP COUNT
+  loopCount++;
+  // sendMessage("TEST");
+  // delay(2000);
 }
