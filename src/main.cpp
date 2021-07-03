@@ -315,7 +315,7 @@ void startSleepTimer()
     startSleepTimer(RESET_TIME);
 }
 
-void SetupLEDs()
+void ledCheck()
 {
     digitalWrite(LED_CORRECT, HIGH);
     digitalWrite(LED_WRONG, HIGH);
@@ -391,8 +391,7 @@ void setup()
     Serial.println("Master setup done.");
     sendMessage("?reset=true");
 
-    SetupLEDs();
-
+    ledCheck();
     startSleepTimer();
 }
 
