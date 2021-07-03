@@ -39,7 +39,7 @@
 #define SLEEP_TIME 10000
 
 // TOUCH
-#define TOUCH_THRESHOLD 40
+#define TOUCH_THRESHOLD 50
 
 // FILE PATHS
 const String QUESTIONS_JSON = "/questions.json";
