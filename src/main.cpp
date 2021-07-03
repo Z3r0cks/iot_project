@@ -13,16 +13,16 @@
 #define LED_WRONG 23
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
-#define LED_SCORE_3 14 //old 27
+#define LED_SCORE_3 14
 #define TOUCH_PIN 2
 
 // PAGES
 enum Page
 {
-  INDEX,
-  QUESTION,
-  SOLUTION,
-  ENDSCREEN
+    INDEX,
+    QUESTION,
+    SOLUTION,
+    ENDSCREEN
 };
 
 // GLOBAL VARS
@@ -65,21 +65,21 @@ unsigned long loopCount;
 // QUESTIONS
 struct Question
 {
-  String id;
-  String category;
-  String text;
-  String *answers;
-  String explanation;
-  String correct;
-  Question(String id, String category, String text, String a, String b, String c, String d, String explanation, String correct)
-  {
-    this->id = id;
-    this->category = category;
-    this->text = text;
-    this->answers = new String[4]{a, b, c, d};
-    this->explanation = explanation;
-    this->correct = correct;
-  }
+    String id;
+    String category;
+    String text;
+    String *answers;
+    String explanation;
+    String correct;
+    Question(String id, String category, String text, String a, String b, String c, String d, String explanation, String correct)
+    {
+        this->id = id;
+        this->category = category;
+        this->text = text;
+        this->answers = new String[4]{a, b, c, d};
+        this->explanation = explanation;
+        this->correct = correct;
+    }
 };
 
 // WIFI SETTINGS
@@ -90,60 +90,41 @@ WiFiClient client;
 WiFiServer server(80);
 String header;
 
-// REPLACE WITH YOUR RECEIVER MAC Address
+// ESP NOW SETTINGS
 uint8_t broadcastAddress[] = {0xB8, 0xF0, 0x09, 0xCC, 0x88, 0x84};
 
-// Structure example to send data
-// Must match the receiver structure
 typedef struct struct_message
 {
-  // String message;
-  char message[32];
+    char message[32];
 } struct_message;
 
-// Create a struct_message called myData
 struct_message sendData;
-
-// callback when data is sent
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
-{
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-}
-
-//##################### RECIEVE ######################s
-// Create a struct_message to recieve data
 struct_message recieveData;
 
-// callback function that will be executed when data is received
+// ESP NOW CALLBACKS
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+    if (status != ESP_NOW_SEND_SUCCESS)
+        Serial.println("Error: Delivery failed.");
+}
+
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  memcpy(&recieveData, incomingData, sizeof(recieveData));
-  Serial.print("Bytes received: ");
-  Serial.println(len);
-  Serial.print("Nachricht: ");
-  Serial.println(recieveData.message);
-  serial = recieveData.message;
+    memcpy(&recieveData, incomingData, sizeof(recieveData));
+    Serial.print("<-- ");
+    Serial.println(recieveData.message);
+    serial = recieveData.message;
 }
 
 void sendMessage(String message)
 {
-  // Set values to send
-  // sendData.message = message;
-  Serial.println("Message " + message);
-  stpcpy(sendData.message, message.c_str());
+    Serial.print("--> ");
+    Serial.println(message);
+    stpcpy(sendData.message, message.c_str());
 
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sendData, sizeof(sendData));
-  Serial.println(result);
-  if (result == ESP_OK)
-  {
-    Serial.println("Sent with success");
-  }
-  else
-  {
-    Serial.println("Error sending the data");
-  }
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&sendData, sizeof(sendData));
+    if (result != ESP_OK)
+        Serial.println("Error: Sending failed.");
 }
 
 const Question questions[] = {
@@ -162,422 +143,413 @@ const Question questions[] = {
 
 String getAnswer(String id)
 {
-  for (const Question &quest : questions)
-  {
-    if (quest.id.equals(id))
-      return quest.correct;
-  }
-  return "";
+    for (const Question &quest : questions)
+    {
+        if (quest.id.equals(id))
+            return quest.correct;
+    }
+    return "";
 }
 
 String questionToJSON(Question quest)
 {
-  String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\", \"correct\":\"$CORRECT\"}";
-  json.replace("$ID", quest.id);
-  json.replace("$TEXT", quest.text);
-  json.replace("$CATEGORY", quest.category);
-  json.replace("$ANSWER_A", quest.answers[0]);
-  json.replace("$ANSWER_B", quest.answers[1]);
-  json.replace("$ANSWER_C", quest.answers[2]);
-  json.replace("$ANSWER_D", quest.answers[3]);
-  json.replace("$EXPLANATION", quest.explanation);
-  json.replace("$CORRECT", quest.correct);
-  return json;
+    String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\", \"correct\":\"$CORRECT\"}";
+    json.replace("$ID", quest.id);
+    json.replace("$TEXT", quest.text);
+    json.replace("$CATEGORY", quest.category);
+    json.replace("$ANSWER_A", quest.answers[0]);
+    json.replace("$ANSWER_B", quest.answers[1]);
+    json.replace("$ANSWER_C", quest.answers[2]);
+    json.replace("$ANSWER_D", quest.answers[3]);
+    json.replace("$EXPLANATION", quest.explanation);
+    json.replace("$CORRECT", quest.correct);
+    return json;
 }
 
 String getQuestion(String id)
 {
-  for (const Question &quest : questions)
-  {
-    if (quest.id.equals(id))
+    for (const Question &quest : questions)
     {
-      correct = quest.correct;
-      return questionToJSON(quest);
+        if (quest.id.equals(id))
+        {
+            correct = quest.correct;
+            return questionToJSON(quest);
+        }
     }
-  }
-  return "";
+    return "";
 }
 
 String questionsToJSON()
 {
-  String json = "{";
-  for (const Question &quest : questions)
-    json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
-  return json + "}";
+    String json = "{";
+    for (const Question &quest : questions)
+        json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
+    return json + "}";
 }
 
 // HTTP RESPONSES
 void respond(String data, String contentType)
 {
-  client.println("HTTP/1.1 200 OK");
-  client.print("Content-type: ");
-  client.println(contentType);
-  client.println("Connection: close");
-  client.println();
-  if (!data.isEmpty())
-    client.println(data);
+    client.println("HTTP/1.1 200 OK");
+    client.print("Content-type: ");
+    client.println(contentType);
+    client.println("Connection: close");
+    client.println();
+    if (!data.isEmpty())
+        client.println(data);
 }
 
 void respond(String html)
 {
-  respond(html, "text/html");
+    respond(html, "text/html");
 }
 
 // RANDOM KEY GENERATOR
 unsigned long randomKey(int positions)
 {
-  unsigned long upper = pow(10, positions);
-  unsigned long lower = pow(10, positions - 1);
-  return (millis() % (upper - lower)) + lower;
+    unsigned long upper = pow(10, positions);
+    unsigned long lower = pow(10, positions - 1);
+    return (millis() % (upper - lower)) + lower;
 }
 
 // GET PAGE
 String getPage(String raw, String title, String bodyClass, String script)
 {
-  String html = String(playerPage);
-  html.replace("$TITLE", title);
-  if (!script.isEmpty())
-    script = "<script src=\"" + script + "\" defer></script>";
-  html.replace("$SCRIPT", script);
-  String page = String(raw);
-  page.replace("$SCORE_PLAYER", String(scorePlayer));
-  page.replace("$SCORE_MASTER", String(scoreMaster));
-  page.replace("$CLASS", bodyClass);
-  html.replace("$BODY", page);
-  return html;
+    String html = String(playerPage);
+    html.replace("$TITLE", title);
+    if (!script.isEmpty())
+        script = "<script src=\"" + script + "\" defer></script>";
+    html.replace("$SCRIPT", script);
+    String page = String(raw);
+    page.replace("$SCORE_PLAYER", String(scorePlayer));
+    page.replace("$SCORE_MASTER", String(scoreMaster));
+    page.replace("$CLASS", bodyClass);
+    html.replace("$BODY", page);
+    return html;
 }
 
 // SCORE LEDS
 void updateScoreLEDs()
 {
-  if (scorePlayer == 0)
-  {
-    digitalWrite(LED_SCORE_1, LOW);
-    digitalWrite(LED_SCORE_2, LOW);
-    digitalWrite(LED_SCORE_3, LOW);
-  }
-  else if (scorePlayer == 1)
-  {
-    digitalWrite(LED_SCORE_1, HIGH);
-    digitalWrite(LED_SCORE_2, LOW);
-    digitalWrite(LED_SCORE_3, LOW);
-  }
-  else if (scorePlayer == 2)
-  {
-    digitalWrite(LED_SCORE_1, HIGH);
-    digitalWrite(LED_SCORE_2, HIGH);
-    digitalWrite(LED_SCORE_3, LOW);
-  }
-  else if (scorePlayer == 3)
-  {
-    digitalWrite(LED_SCORE_1, HIGH);
-    digitalWrite(LED_SCORE_2, HIGH);
-    digitalWrite(LED_SCORE_3, HIGH);
-  }
+    if (scorePlayer == 0)
+    {
+        digitalWrite(LED_SCORE_1, LOW);
+        digitalWrite(LED_SCORE_2, LOW);
+        digitalWrite(LED_SCORE_3, LOW);
+    }
+    else if (scorePlayer == 1)
+    {
+        digitalWrite(LED_SCORE_1, HIGH);
+        digitalWrite(LED_SCORE_2, LOW);
+        digitalWrite(LED_SCORE_3, LOW);
+    }
+    else if (scorePlayer == 2)
+    {
+        digitalWrite(LED_SCORE_1, HIGH);
+        digitalWrite(LED_SCORE_2, HIGH);
+        digitalWrite(LED_SCORE_3, LOW);
+    }
+    else if (scorePlayer == 3)
+    {
+        digitalWrite(LED_SCORE_1, HIGH);
+        digitalWrite(LED_SCORE_2, HIGH);
+        digitalWrite(LED_SCORE_3, HIGH);
+    }
 }
 
 // GAME LOGIC
 void resetLogic()
 {
-  sleepTimerEnabled = false;
-  sleepTimer = RESET_TIME;
-  loopCount = 0;
-  page = Page::INDEX;
-  scoreMaster = 0;
-  scorePlayer = 0;
-  lockAnswer = false;
-  digitalWrite(LED_CORRECT, LOW);
-  digitalWrite(LED_WRONG, LOW);
+    sleepTimerEnabled = false;
+    sleepTimer = RESET_TIME;
+    loopCount = 0;
+    page = Page::INDEX;
+    scoreMaster = 0;
+    scorePlayer = 0;
+    lockAnswer = false;
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
 }
 
 // DEEP SLEEP
 void deepSleep()
 {
-  Serial.println("Going to sleep.");
-  // Serial2.println("?sleep=true");
-  sendMessage("?sleep=true");
-  delay(5000);
-  esp_deep_sleep_start();
+    deepSleep("");
+}
+
+void deepSleep(String errorMessage)
+{
+    if (!errorMessage.isEmpty())
+    {
+        Serial.print("Error: ");
+        Serial.println(errorMessage);
+        delay(2500);
+    }
+    Serial.println("Going to sleep.");
+    sendMessage("?sleep=true");
+    delay(5000);
+    esp_deep_sleep_start();
 }
 
 // SLEEP TIMER
 void updateSleepTimer()
 {
-  if (sleepTimerEnabled)
-  {
-    unsigned long time = millis();
-    sleepTimer -= time - lastTime;
-    lastTime = time;
-    if (sleepTimer <= 0)
+    if (sleepTimerEnabled)
     {
-      resetLogic();
-      deepSleep();
+        unsigned long time = millis();
+        sleepTimer -= time - lastTime;
+        lastTime = time;
+        if (sleepTimer <= 0)
+        {
+            resetLogic();
+            deepSleep();
+        }
     }
-  }
 }
 
 void startSleepTimer(long timeout)
 {
-  sleepTimer = timeout;
-  lastTime = millis();
-  sleepTimerEnabled = true;
+    sleepTimer = timeout;
+    lastTime = millis();
+    sleepTimerEnabled = true;
 }
 
 void startSleepTimer()
 {
-  startSleepTimer(RESET_TIME);
+    startSleepTimer(RESET_TIME);
 }
 
 void setup()
 {
-  // Init Serial Monitor
-  Serial.begin(9600);
+    // SERIAL MONITOR
+    Serial.begin(9600);
 
-  // SETUP PINS
-  pinMode(LED_CORRECT, OUTPUT);
-  pinMode(LED_WRONG, OUTPUT);
-  pinMode(LED_SCORE_1, OUTPUT);
-  pinMode(LED_SCORE_2, OUTPUT);
-  pinMode(LED_SCORE_3, OUTPUT);
+    // SETUP PINS
+    pinMode(LED_CORRECT, OUTPUT);
+    pinMode(LED_WRONG, OUTPUT);
+    pinMode(LED_SCORE_1, OUTPUT);
+    pinMode(LED_SCORE_2, OUTPUT);
+    pinMode(LED_SCORE_3, OUTPUT);
 
-  // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA);
+    // SETUP WIFI
+    WiFi.mode(WIFI_STA);
+    WiFi.softAP(ssid, password);
+    IPAddress ip = WiFi.softAPIP();
+    server.begin();
+    Serial.print("Server running at ");
+    Serial.print(ip);
+    Serial.println(".");
 
-  // SETUP WIFI
-  WiFi.softAP(ssid, password);
-  IPAddress ip = WiFi.softAPIP();
-  server.begin();
-  Serial.print("Server running at ");
-  Serial.print(ip);
-  Serial.println(".");
+    // SETUP SPIFFS
+    if (!SPIFFS.begin(true))
+        deepSleep("Failed to initialize SPIFFS.");
 
-  // SETUP SPIFFS
-  SPIFFS.begin(true);
+    // SETUP ESP-NOW
+    if (esp_now_init() != ESP_OK)
+        deepSleep("Failed to initialize ESP-NOW.");
 
-  // Init ESP-NOW
-  if (esp_now_init() != ESP_OK)
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
+    esp_now_register_send_cb(OnDataSent);
+    esp_now_register_recv_cb(OnDataRecv);
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
+    esp_now_peer_info_t peerInfo;
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
 
-  // Once ESPNow is successfully Init, we will register for recv CB to
-  // get recv packer info
-  esp_now_register_recv_cb(OnDataRecv);
+    // Add peer
+    if (esp_now_add_peer(&peerInfo) != ESP_OK)
+        deepSleep("Failed to add peer.");
 
-  // Register peer
-  esp_now_peer_info_t peerInfo;
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
+    // SETUP LOGIC
+    resetLogic();
+    updateScoreLEDs();
 
-  // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
-    Serial.println("Failed to add peer");
-    return;
-  }
+    // SETUP DEEP SLEEP
+    touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
+    esp_sleep_enable_touchpad_wakeup();
 
-  // SETUP LOGIC
-  resetLogic();
-  updateScoreLEDs();
+    Serial.println("Master setup done.");
+    sendMessage("?reset=true");
 
-  // SETUP DEEP SLEEP
-  touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
-  esp_sleep_enable_touchpad_wakeup();
-
-  Serial.println("Master setup done.");
-  // Serial2.println("?reset=true");
-  sendMessage("?reset=true");
-
-  startSleepTimer();
+    startSleepTimer();
 }
 
 void loop()
 {
+    client = server.available();
 
-  client = server.available();
-
-  if (client)
-  {
-    while (client.connected())
+    if (client)
     {
-      if (client.available())
-      {
-        startSleepTimer();
-        String header = client.readString();
-        
-        if (header.endsWith("\n"))
+        while (client.connected())
         {
-          if (header.startsWith(ROUTE_INDEX_JS))
-          {
-            validation = randomKey(8);
-            String script = String(playerIndexJS);
-            script.replace("$VALIDATION", validation);
-            respond(script, "application/javascript");
-            break;
-          }
-          else if (header.startsWith(ROUTE_SOLUTION_JS))
-          {
-            validation = randomKey(8);
-            String script = String(playerSolutionJS);
-            script.replace("$VALIDATION", validation);
-            script.replace("$ANSWER", answer);
-            script.replace("$CORRECT", correct);
-            script.replace("$QUESTION", getQuestion(question));
-            respond(script, "application/javascript");
-            break;
-          }
-          else if (header.startsWith(ROUTE_QUESTION_JS))
-          {
-            validation = randomKey(8);
-            String script = String(playerQuestionJS);
-            script.replace("$VALIDATION", validation);
-            script.replace("$QUESTION", getQuestion(question));
-            respond(script, "application/javascript");
-            break;
-          }
-          else if (header.startsWith(ROUTE_SUBMIT_KEY))
-          {
-            int index = strlen(ROUTE_SUBMIT_KEY);
-            respond(validation, "text/plain");
-            String key = header.substring(index, index + 9);
-            Serial.println(key);
-            // Serial2.println(key);
-            sendMessage(key);
-            serial = "";
-            break;
-          }
-          else if (header.startsWith(ROUTE_VALIDATE_KEY))
-          {
-            if (serial.startsWith("?valid=true"))
+            if (client.available())
             {
-              respond(validation, "text/plain");
-              page = Page::SOLUTION;
-            }
-            else if (serial.startsWith("?valid=false"))
-            {
-              respond("INVALID", "text/plain");
-            }
-            else
-            {
-              respond("", "text/plain");
-            }
-            serial = "";
-            break;
-          }
-          else if (header.startsWith(ROUTE_AWAIT_QUESTION))
-          {
-            if (serial.startsWith("?question="))
-            {
-              respond(validation, "text/plain");
-              page = Page::QUESTION;
-              question = serial.substring(10, 15);
-            }
-            else
-            {
-              respond("", "text/plain");
-            }
-            serial = "";
-            break;
-          }
-          else if (header.startsWith(ROUTE_SUBMIT_ANSWER))
-          {
-            if (!lockAnswer)
-            {
-              lockAnswer = true;
-              int index = strlen(ROUTE_SUBMIT_ANSWER);
-              respond(validation, "text/plain");
-              String selectedAnswer = header.substring(index, index + 9);
-              answer = selectedAnswer.substring(8, 9);
-              Serial.println(selectedAnswer);
-              // Serial2.println(selectedAnswer);
-              sendMessage(selectedAnswer);
-              serial = "";
-            }
-            break;
-          }
-          else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
-          {
-            if (serial.startsWith("?correct="))
-            {
-              if (serial.startsWith("?correct=true"))
-              {
-                digitalWrite(LED_CORRECT, HIGH);
-                scorePlayer++;
-              }
-              else if (serial.startsWith("?correct=false"))
-              {
-                digitalWrite(LED_WRONG, HIGH);
-                scoreMaster++;
-              }
-              respond(validation, "text/plain");
-              if (scorePlayer == 3 || scoreMaster == 3)
-                page = Page::ENDSCREEN;
-              else
-                page = Page::SOLUTION;
-            }
-            else
-            {
-              respond("", "text/plain");
-            }
-            serial = "";
-            break;
-          }
-          else if (header.startsWith(ROUTE_STYLE_CSS))
-          {
-            respond(playerStyle, "text/css");
-            break;
-          }
+                startSleepTimer();
+                String header = client.readString();
 
-          // PAGES
-          if (page == Page::ENDSCREEN)
-          {
-            if (scorePlayer == 3)
-            {
-              respond(getPage(playerVictory, "Quiz gewonnen", "victoryBody", ""));
+                if (header.endsWith("\n"))
+                {
+                    if (header.startsWith(ROUTE_INDEX_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(playerIndexJS);
+                        script.replace("$VALIDATION", validation);
+                        respond(script, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_SOLUTION_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(playerSolutionJS);
+                        script.replace("$VALIDATION", validation);
+                        script.replace("$ANSWER", answer);
+                        script.replace("$CORRECT", correct);
+                        script.replace("$QUESTION", getQuestion(question));
+                        respond(script, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_QUESTION_JS))
+                    {
+                        validation = randomKey(8);
+                        String script = String(playerQuestionJS);
+                        script.replace("$VALIDATION", validation);
+                        script.replace("$QUESTION", getQuestion(question));
+                        respond(script, "application/javascript");
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_SUBMIT_KEY))
+                    {
+                        int index = strlen(ROUTE_SUBMIT_KEY);
+                        respond(validation, "text/plain");
+                        String key = header.substring(index, index + 9);
+                        sendMessage(key);
+                        serial = "";
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_VALIDATE_KEY))
+                    {
+                        if (serial.startsWith("?valid=true"))
+                        {
+                            respond(validation, "text/plain");
+                            page = Page::SOLUTION;
+                        }
+                        else if (serial.startsWith("?valid=false"))
+                        {
+                            respond("INVALID", "text/plain");
+                        }
+                        else
+                        {
+                            respond("", "text/plain");
+                        }
+                        serial = "";
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_AWAIT_QUESTION))
+                    {
+                        if (serial.startsWith("?question="))
+                        {
+                            respond(validation, "text/plain");
+                            page = Page::QUESTION;
+                            question = serial.substring(10, 15);
+                        }
+                        else
+                        {
+                            respond("", "text/plain");
+                        }
+                        serial = "";
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_SUBMIT_ANSWER))
+                    {
+                        if (!lockAnswer)
+                        {
+                            lockAnswer = true;
+                            int index = strlen(ROUTE_SUBMIT_ANSWER);
+                            respond(validation, "text/plain");
+                            String selectedAnswer = header.substring(index, index + 9);
+                            answer = selectedAnswer.substring(8, 9);
+                            sendMessage(selectedAnswer);
+                            serial = "";
+                        }
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_VALIDATE_ANSWER))
+                    {
+                        if (serial.startsWith("?correct="))
+                        {
+                            if (serial.startsWith("?correct=true"))
+                            {
+                                digitalWrite(LED_CORRECT, HIGH);
+                                scorePlayer++;
+                            }
+                            else if (serial.startsWith("?correct=false"))
+                            {
+                                digitalWrite(LED_WRONG, HIGH);
+                                scoreMaster++;
+                            }
+                            respond(validation, "text/plain");
+                            if (scorePlayer == 3 || scoreMaster == 3)
+                                page = Page::ENDSCREEN;
+                            else
+                                page = Page::SOLUTION;
+                        }
+                        else
+                        {
+                            respond("", "text/plain");
+                        }
+                        serial = "";
+                        break;
+                    }
+                    else if (header.startsWith(ROUTE_STYLE_CSS))
+                    {
+                        respond(playerStyle, "text/css");
+                        break;
+                    }
+
+                    // PAGES
+                    if (page == Page::ENDSCREEN)
+                    {
+                        if (scorePlayer == 3)
+                        {
+                            respond(getPage(playerVictory, "Quiz gewonnen", "victoryBody", ""));
+                        }
+                        else
+                        {
+                            respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
+                        }
+                        startSleepTimer(SLEEP_TIME);
+                    }
+                    else if (page == Page::SOLUTION)
+                    {
+                        lockAnswer = false;
+                        String title = "Auflösung";
+                        if (question.isEmpty())
+                            title = "Warte auf Frage";
+                        respond(getPage(playerSolution, title, "solutionBody", "solution.js"));
+                    }
+                    else if (page == Page::QUESTION)
+                    {
+                        respond(getPage(playerQuestion, "Frage", "questionBody", "question.js"));
+                        digitalWrite(LED_CORRECT, LOW);
+                        digitalWrite(LED_WRONG, LOW);
+                    }
+                    else if (page == Page::INDEX)
+                    {
+                        respond(getPage(playerIndex, "Code", "indexBody", "index.js"));
+                    }
+                    break;
+                }
             }
-            else
-            {
-              respond(getPage(playerDefeat, "Quiz verloren", "defeatBody", ""));
-            }
-            startSleepTimer(SLEEP_TIME);
-          }
-          else if (page == Page::SOLUTION)
-          {
-            lockAnswer = false;
-            String title = "Auflösung";
-            if (question.isEmpty())
-              title = "Warte auf Frage";
-            respond(getPage(playerSolution, title, "solutionBody", "solution.js"));
-          }
-          else if (page == Page::QUESTION)
-          {
-            respond(getPage(playerQuestion, "Frage", "questionBody", "question.js"));
-            digitalWrite(LED_CORRECT, LOW);
-            digitalWrite(LED_WRONG, LOW);
-          }
-          else if (page == Page::INDEX)
-          {
-            respond(getPage(playerIndex, "Code", "indexBody", "index.js"));
-          }
-          break;
         }
-      }
+
+        client.stop();
     }
 
-    client.stop();
-  }
+    updateScoreLEDs();
+    updateSleepTimer();
 
-  updateScoreLEDs();
-  updateSleepTimer();
-
-  // UPDATE LOOP COUNT
-  loopCount++;
-  // sendMessage("TEST");
-  // delay(2000);
+    // UPDATE LOOP COUNT
+    loopCount++;
+    // sendMessage("TEST");
+    // delay(2000);
 }
