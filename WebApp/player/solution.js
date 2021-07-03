@@ -1,4 +1,4 @@
-const rawQuestion = `$QUESTION`;
+const rawQuestion = "$QUESTION";
 const header = document.querySelector(".header");
 const feedback = document.querySelector("#feedback");
 const solution = document.querySelector("#solution");

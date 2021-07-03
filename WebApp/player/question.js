@@ -42,7 +42,7 @@ function submitHandler() {
                                 }
                             }
                         };
-                        xhttp2.open("GET", "validate-answer" + selected, true);
+                        xhttp2.open("GET", "validate-answer", true);
                         xhttp2.send();
                     }, 1000);
                 }
