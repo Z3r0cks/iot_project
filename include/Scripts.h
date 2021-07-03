@@ -2,6 +2,7 @@ const char playerIndexJS[] = R"=====(
 "use strict";
 var button = document.querySelector("#enter-game");
 var input = document.querySelector("#gamecode-input");
+var wrapper = document.querySelector(".wrapper");
 var interval;
 function clickHandler() {
     clearInterval(interval);
@@ -23,7 +24,7 @@ function clickHandler() {
                                 var div = document.createElement("div");
                                 div.classList.add("error-message");
                                 div.innerHTML = "Der Code ist nicht richtig. Bitte versuche es erneut.";
-                                document.body.appendChild(div);
+                                wrapper.appendChild(div);
                                 input.value = "";
                                 input.focus();
                                 button.addEventListener("click", clickHandler);

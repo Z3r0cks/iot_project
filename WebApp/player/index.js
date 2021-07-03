@@ -1,5 +1,6 @@
 const button = document.querySelector("#enter-game");
 const input = document.querySelector("#gamecode-input");
+const wrapper = document.querySelector(".wrapper");
 
 let interval;
 
@@ -22,7 +23,7 @@ function clickHandler() {
                                 const div = document.createElement("div");
                                 div.classList.add("error-message");
                                 div.innerHTML = "Der Code ist nicht richtig. Bitte versuche es erneut.";
-                                document.body.appendChild(div);
+                                wrapper.appendChild(div);
                                 input.value = "";
                                 input.focus();
                                 button.addEventListener("click", clickHandler);
