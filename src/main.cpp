@@ -9,11 +9,11 @@
 #include <Styles.h>
 
 // PIN LAYOUT
-#define LED_CORRECT 22
-#define LED_WRONG 23
+#define LED_CORRECT 23
+#define LED_WRONG 22
 #define LED_SCORE_1 33
 #define LED_SCORE_2 32
-#define LED_SCORE_3 14 //old 27
+#define LED_SCORE_3 14
 #define TOUCH_PIN 2
 
 // ROUTES QUIZ
@@ -315,6 +315,21 @@ void startSleepTimer()
     startSleepTimer(RESET_TIME);
 }
 
+void SetupLEDs()
+{
+    digitalWrite(LED_CORRECT, HIGH);
+    digitalWrite(LED_WRONG, HIGH);
+    digitalWrite(LED_SCORE_1, HIGH);
+    digitalWrite(LED_SCORE_2, HIGH);
+    digitalWrite(LED_SCORE_3, HIGH);
+    delay(2000);
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
+    digitalWrite(LED_SCORE_1, LOW);
+    digitalWrite(LED_SCORE_2, LOW);
+    digitalWrite(LED_SCORE_3, LOW);
+}
+
 void setup()
 {
     // SERIAL MONITOR
@@ -375,6 +390,8 @@ void setup()
 
     Serial.println("Master setup done.");
     sendMessage("?reset=true");
+
+    SetupLEDs();
 
     startSleepTimer();
 }
