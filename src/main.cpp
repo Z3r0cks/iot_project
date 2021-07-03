@@ -16,21 +16,6 @@
 #define LED_SCORE_3 14
 #define TOUCH_PIN 2
 
-// PAGES
-enum Page
-{
-    INDEX,
-    QUESTION,
-    SOLUTION,
-    ENDSCREEN
-};
-
-// GLOBAL VARS
-Page page;
-String key, validation, serial, question, correct, answer;
-bool lockAnswer;
-int scoreMaster, scorePlayer;
-
 // ROUTES QUIZ
 #define ROUTE_INDEX_JS "GET /index.js"
 #define ROUTE_SOLUTION_JS "GET /solution.js"
@@ -42,19 +27,27 @@ int scoreMaster, scorePlayer;
 #define ROUTE_VALIDATE_ANSWER "GET /validate-answer"
 #define ROUTE_STYLE_CSS "GET /style.css"
 
-// ROUTES FORM
-#define ROUTE_FORM "GET /suggest-question"
-#define ROUTE_FORM_JS "GET /form.js"
-#define ROUTE_FORM_SUBMIT "POST /submit-question"
-#define ROUTE_FORM_GET "GET /download-questions"
-#define ROUTE_FORM_CLEAR "GET /clear-questions"
-
 // DURATIONS
 #define RESET_TIME 300000
 #define SLEEP_TIME 10000
 
 // TOUCH
 #define TOUCH_THRESHOLD 40
+
+// PAGES
+enum Page
+{
+    INDEX,
+    SOLUTION,
+    QUESTION,
+    ENDSCREEN
+};
+
+// GLOBAL VARS
+Page page;
+String key, validation, serial, question, answer, correct;
+bool lockAnswer;
+int scoreMaster, scorePlayer;
 
 // TIMER VARS
 unsigned long lastTime;
@@ -141,19 +134,9 @@ const Question questions[] = {
     Question("04_04", "4", "Wieso wurde die Linachtalsperre ursprünglich gebaut?", "Zum Schutz vor Überschwemmungen nach einer Schneeschmelze", "Zur Stromgewinnung", "Damit ein Badesee entsteht", "Damit eine Örtliche Fischzucht entstehen kann", "Die Linachtalsperre wurde von 1922-1925 gebaut. <br> Bis 1969 wurde sie, wie ursprünglich geplant, zur örtlichen Stromgewinnung genutzt. <br> Aus Sicherheitsgründen wurde 1988 das Wasser abgelassen. <br> Seit ihrer Renovierung 2007 staut sie wieder das Wasser der Linach.", "B"),
 };
 
-String getAnswer(String id)
-{
-    for (const Question &quest : questions)
-    {
-        if (quest.id.equals(id))
-            return quest.correct;
-    }
-    return "";
-}
-
 String questionToJSON(Question quest)
 {
-    String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\", \"correct\":\"$CORRECT\"}";
+    String json = "{\"id\":\"$ID\", \"category\":\"$CATEGORY\", \"text\":\"$TEXT\", \"answers\":[\"$ANSWER_A\",\"$ANSWER_B\",\"$ANSWER_C\",\"$ANSWER_D\"], \"explanation\":\"$EXPLANATION\"}";
     json.replace("$ID", quest.id);
     json.replace("$TEXT", quest.text);
     json.replace("$CATEGORY", quest.category);
@@ -162,7 +145,6 @@ String questionToJSON(Question quest)
     json.replace("$ANSWER_C", quest.answers[2]);
     json.replace("$ANSWER_D", quest.answers[3]);
     json.replace("$EXPLANATION", quest.explanation);
-    json.replace("$CORRECT", quest.correct);
     return json;
 }
 
@@ -177,14 +159,6 @@ String getQuestion(String id)
         }
     }
     return "";
-}
-
-String questionsToJSON()
-{
-    String json = "{";
-    for (const Question &quest : questions)
-        json += "\"" + quest.id + "\":" + questionToJSON(quest) + ",";
-    return json + "}";
 }
 
 // HTTP RESPONSES
@@ -266,6 +240,9 @@ void resetLogic()
     page = Page::INDEX;
     scoreMaster = 0;
     scorePlayer = 0;
+    question = "";
+    answer = "";
+    correct = "";
     lockAnswer = false;
     digitalWrite(LED_CORRECT, LOW);
     digitalWrite(LED_WRONG, LOW);
@@ -319,6 +296,21 @@ void startSleepTimer()
     startSleepTimer(RESET_TIME);
 }
 
+void ledCheck()
+{
+    digitalWrite(LED_CORRECT, HIGH);
+    digitalWrite(LED_WRONG, HIGH);
+    digitalWrite(LED_SCORE_1, HIGH);
+    digitalWrite(LED_SCORE_2, HIGH);
+    digitalWrite(LED_SCORE_3, HIGH);
+    delay(2000);
+    digitalWrite(LED_CORRECT, LOW);
+    digitalWrite(LED_WRONG, LOW);
+    digitalWrite(LED_SCORE_1, LOW);
+    digitalWrite(LED_SCORE_2, LOW);
+    digitalWrite(LED_SCORE_3, LOW);
+}
+
 void setup()
 {
     // SERIAL MONITOR
@@ -368,7 +360,6 @@ void setup()
 
     // SETUP LOGIC
     resetLogic();
-    updateScoreLEDs();
 
     // SETUP DEEP SLEEP
     touchAttachInterrupt(TOUCH_PIN, NULL, TOUCH_THRESHOLD);
@@ -377,6 +368,7 @@ void setup()
     Serial.println("Master setup done.");
     sendMessage("?reset=true");
 
+    ledCheck();
     startSleepTimer();
 }
 
