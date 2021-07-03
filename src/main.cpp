@@ -356,7 +356,7 @@ void setup()
     peerInfo.channel = 0;
     peerInfo.encrypt = false;
 
-    // ADD PEER LOOP 
+    // ADD PEER LOOP
     byte retry = 10;
     while (esp_now_add_peer(&peerInfo) != ESP_OK)
     {
@@ -382,6 +382,14 @@ void setup()
 
 void loop()
 {
+    if (serial.startsWith("?reset=true"))
+        resetLogic();
+    else if (serial.startsWith("?sleep=true"))
+    {
+        resetLogic();
+        deepSleep();
+    }
+
     client = server.available();
 
     if (client)
