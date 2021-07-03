@@ -1,7 +1,7 @@
 const questions = $QUESTIONS;
 for (const key in questions) {
     const quest = questions[key];
-    const div = document.createElement("div");
+    const div = document.createElement("button");
     div.classList.add("question");
     div.id = key;
     

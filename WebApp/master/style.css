@@ -158,10 +158,17 @@ body {
    margin: 35px 0 15px 0;
 }
 .question {
+   width: 100%;
    background-color: #efefef;
+   border:solid #efefef;
    padding: 10px 5px;
    font-size: 14px;
    margin-bottom: 12px;
+}
+.question:focus {
+   background-color: #436436;
+   border: solid #efefef;
+   color: #efefef;
 }
 
 .question:last-child {
