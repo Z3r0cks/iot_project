@@ -39,7 +39,7 @@
 #define SLEEP_TIME 10000
 
 // TOUCH
-#define TOUCH_THRESHOLD 50
+#define TOUCH_THRESHOLD 55
 
 // FILE PATHS
 const String QUESTIONS_JSON = "/questions.json";
@@ -396,6 +396,8 @@ void setup()
 
 void loop()
 {
+    
+    //    Serial.println(touchRead(TOUCH_PIN));
     if (serial.startsWith("?reset=true"))
         resetLogic();
     else if (serial.startsWith("?sleep=true"))
